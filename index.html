@@ -2,64 +2,80 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yên Lộc - Cùng Con Chơi Đùa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>Yên Lộc - Góc Nhỏ Của Con</title>
     <style>
-        /* --- CSS GIAO DIỆN CHILL --- */
+        :root {
+            --tile-w: 60px;
+            --tile-h: 70px;
+            --cols: 10;
+            --rows: 8;
+        }
+
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000 url('background.jpg') no-repeat center center fixed;
             background-size: cover;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: manipulation;
         }
+
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.2); z-index: 1; }
         
         #game-container {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 15px;
+            z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 10px;
+            width: 95%;
         }
 
-        /* Bàn cờ với hiệu ứng kính mờ */
         #game-board {
             display: grid;
-            grid-template-columns: repeat(10, 60px);
-            grid-template-rows: repeat(8, 70px);
-            gap: 4px; padding: 10px;
+            grid-template-columns: repeat(var(--cols), var(--tile-w));
+            grid-template-rows: repeat(var(--rows), var(--tile-h));
+            gap: 4px; padding: 8px;
             background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            justify-content: center;
         }
 
         .tile {
-            width: 60px; height: 70px;
+            width: var(--tile-w); height: var(--tile-h);
             background-size: cover; background-position: center;
             border-radius: 6px; cursor: pointer;
-            transition: all 0.2s; border: 2px solid transparent;
+            transition: transform 0.1s; border: 2px solid transparent;
         }
-        .tile:hover { transform: scale(1.05); box-shadow: 0 0 10px #fff; }
-        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 15px #00f2fe; transform: scale(1.1); z-index: 2; }
+        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 15px #00f2fe; transform: scale(1.05); z-index: 2; }
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        .game-header { color: white; text-align: center; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
-        h1 { font-weight: 300; font-size: 2.2rem; letter-spacing: 4px; margin: 0; }
+        @media (max-width: 600px) {
+            :root { --tile-w: 55px; --tile-h: 65px; --cols: 5; --rows: 16; }
+            h1 { font-size: 1.5rem !important; }
+            #game-board { gap: 3px; padding: 5px; }
+        }
+
+        .game-header { color: white; text-align: center; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); }
+        h1 { font-weight: 300; font-size: 2.2rem; letter-spacing: 4px; margin: 5px 0; }
         
         .btn-chill {
-            padding: 10px 30px; background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px; background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 30px;
             color: white; cursor: pointer; backdrop-filter: blur(5px);
-            transition: 0.3s; font-size: 0.9rem; text-transform: uppercase;
+            font-size: 0.85rem; transition: 0.3s;
         }
-        .btn-chill:hover { background: rgba(255, 255, 255, 0.4); letter-spacing: 1px; }
+        .btn-chill:hover { background: rgba(255, 255, 255, 0.4); }
 
-        /* --- HIỆU ỨNG BƯỚM & NHẠC --- */
         #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         .butterfly { position: absolute; opacity: 0; }
-        @keyframes fly-right { 0% { left: -10%; top: var(--start-top); opacity: 0; transform: scale(var(--size)); } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 110%; top: var(--end-top); opacity: 0; transform: scale(var(--size)); } }
-        @keyframes fly-up { 0% { bottom: -10%; left: var(--start-left); opacity: 0; transform: scale(var(--size)); } 10% { opacity: 1; } 90% { opacity: 1; } 100% { bottom: 110%; left: var(--end-left); opacity: 0; transform: scale(var(--size)); } }
-        .music-control { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
+        @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; transform: scale(var(--s)); } 100% { left: 110%; top: var(--et); opacity: 0; transform: scale(var(--s)); } }
+        @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; transform: scale(var(--s)); } 100% { bottom: 110%; left: var(--el); opacity: 0; transform: scale(var(--s)); } }
+        
+        .controls-wrapper {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            display: flex; gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -69,34 +85,40 @@
     <div id="game-container">
         <div class="game-header">
             <h1>YÊN LỘC</h1>
-            <p>Góc nhỏ bình yên của gia đình</p>
+            <p>Góc nhỏ bình yên - Nối trọn yêu thương</p>
         </div>
         <div id="game-board"></div>
         <button class="btn-chill" onclick="resetGame()">Chơi Ván Mới</button>
     </div>
 
     <div id="butterfly-container"></div>
-    <div class="music-control">
-        <button class="btn-chill" onclick="toggleMusic()">
-            <span id="music-icon">🎵</span> <span id="music-text">Bật Nhạc</span>
-        </button>
+
+    <div class="controls-wrapper">
+        <button class="btn-chill" onclick="toggleButterflies()">🦋 <span id="btf-text">Tắt Bướm</span></button>
+        <button class="btn-chill" onclick="toggleMusic()">🎵 <span id="music-text">Nhạc</span></button>
     </div>
+
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
 
     <script>
-        const ROWS = 8; 
-        const COLS = 10; 
+        const isMobile = window.innerWidth <= 600;
+        const ROWS = isMobile ? 16 : 8; 
+        const COLS = isMobile ? 5 : 10; 
+
+        // Danh sách ảnh của con
         const childImages = [
             'images/con1.jpg', 'images/con2.jpg', 'images/con3.jpg', 'images/con4.jpg',
             'images/con5.jpg', 'images/con6.jpg', 'images/con7.jpg', 'images/con8.jpg',
-            'images/con9.jpg', 'images/con10.jpg', 'images/con11.jpg', 'images/con12.jpg', 'images/con13.jpg', 'images/con14.jpg', 'images/con15.jpg'
+            'images/con9.jpg', 'images/con10.jpg'
         ];
 
         let board = []; 
         let selectedTiles = [];
         let matchedCount = 0;
+        let butterflyInterval = null;
+        let isButterflyActive = true;
 
-        // KHỞI TẠO MA TRẬN VỚI LỚP ĐỆM TRỐNG (Padding)
+        // KHỞI TẠO GAME
         function initGame() {
             const gameBoard = document.getElementById('game-board');
             gameBoard.innerHTML = '';
@@ -105,29 +127,26 @@
             matchedCount = 0;
 
             let tileList = [];
-            let totalTiles = ROWS * COLS;
-            for (let i = 0; i < totalTiles / 2; i++) {
+            for (let i = 0; i < (ROWS * COLS) / 2; i++) {
                 let imgIdx = i % childImages.length;
                 tileList.push(imgIdx, imgIdx);
             }
             tileList.sort(() => Math.random() - 0.5);
 
-            // Tạo ma trận lớn hơn (ROWS+2 x COLS+2) để có đường đi bên ngoài
             for (let r = -1; r <= ROWS; r++) {
                 board[r] = [];
                 for (let c = -1; c <= COLS; c++) {
                     if (r === -1 || r === ROWS || c === -1 || c === COLS) {
-                        board[r][c] = -1; // Ô trống ở viền ngoài cùng
+                        board[r][c] = -1;
                     } else {
-                        let imgIndex = tileList.pop();
-                        board[r][c] = imgIndex;
-
-                        const tileDiv = document.createElement('div');
-                        tileDiv.className = 'tile';
-                        tileDiv.id = `tile-${r}-${c}`;
-                        tileDiv.style.backgroundImage = `url('${childImages[imgIndex]}')`;
-                        tileDiv.onclick = () => handleTileClick(r, c);
-                        gameBoard.appendChild(tileDiv);
+                        let imgIdx = tileList.pop();
+                        board[r][c] = imgIdx;
+                        const tile = document.createElement('div');
+                        tile.className = 'tile';
+                        tile.id = `tile-${r}-${c}`;
+                        tile.style.backgroundImage = `url('${childImages[imgIdx]}')`;
+                        tile.onclick = () => handleTileClick(r, c);
+                        gameBoard.appendChild(tile);
                     }
                 }
             }
@@ -135,30 +154,27 @@
 
         function handleTileClick(r, c) {
             if (board[r][c] === -1) return;
-            const clickedTile = document.getElementById(`tile-${r}-${c}`);
+            const tile = document.getElementById(`tile-${r}-${c}`);
 
             if (selectedTiles.length === 1 && selectedTiles[0].r === r && selectedTiles[0].c === c) {
-                clickedTile.classList.remove('selected');
+                tile.classList.remove('selected');
                 selectedTiles = [];
                 return;
             }
 
-            clickedTile.classList.add('selected');
-            selectedTiles.push({ r, c, imgIndex: board[r][c] });
+            tile.classList.add('selected');
+            selectedTiles.push({ r, c, idx: board[r][c] });
 
             if (selectedTiles.length === 2) {
-                const t1 = selectedTiles[0];
-                const t2 = selectedTiles[1];
-
-                if (t1.imgIndex === t2.imgIndex && checkConnect(t1, t2)) {
+                const t1 = selectedTiles[0], t2 = selectedTiles[1];
+                if (t1.idx === t2.idx && checkConnect(t1, t2)) {
                     setTimeout(() => {
                         document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
-                        board[t1.r][t1.c] = -1;
-                        board[t2.r][t2.c] = -1;
+                        board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
                         matchedCount += 2;
-                        if (matchedCount === ROWS * COLS) alert("Cảm ơn bạn đã ghé thăm Yên Lộc!");
-                    }, 250);
+                        if (matchedCount === ROWS * COLS) alert("Tuyệt vời! Con yêu đã mỉm cười với bạn!");
+                    }, 200);
                 } else {
                     setTimeout(() => {
                         document.getElementById(`tile-${t1.r}-${t1.c}`).classList.remove('selected');
@@ -169,66 +185,67 @@
             }
         }
 
-        // THUẬT TOÁN KIỂM TRA ĐƯỜNG ĐI (Đã hỗ trợ đi xuyên qua lớp đệm ngoài)
+        // THUẬT TOÁN NỐI HÌNH PIKACHU
         function checkConnect(p1, p2) {
             const isEmpty = (r, c) => (r >= -1 && r <= ROWS && c >= -1 && c <= COLS && board[r][c] === -1);
-
-            const checkLine = (v1, v2, fixed, isRow) => {
-                let start = Math.min(v1, v2) + 1;
-                let end = Math.max(v1, v2);
-                for (let i = start; i < end; i++) {
-                    if (isRow && !isEmpty(fixed, i)) return false;
-                    if (!isRow && !isEmpty(i, fixed)) return false;
-                }
+            const checkL = (v1, v2, f, isR) => {
+                for (let i = Math.min(v1, v2) + 1; i < Math.max(v1, v2); i++)
+                    if (isR ? !isEmpty(f, i) : !isEmpty(i, f)) return false;
                 return true;
             };
-
-            // 1. Nối thẳng (0 khúc cua)
-            if (p1.r === p2.r && checkLine(p1.c, p2.c, p1.r, true)) return true;
-            if (p1.c === p2.c && checkLine(p1.r, p2.r, p1.c, false)) return true;
-
-            // 2. Nối 1 khúc cua (chữ L)
-            if (isEmpty(p1.r, p2.c) && checkLine(p1.c, p2.c, p1.r, true) && checkLine(p1.r, p2.r, p2.c, false)) return true;
-            if (isEmpty(p2.r, p1.c) && checkLine(p1.r, p2.r, p1.c, false) && checkLine(p1.c, p2.c, p2.r, true)) return true;
-
-            // 3. Nối 2 khúc cua (Dò tìm đường đi qua các ô trống lân cận)
-            for (let r = -1; r <= ROWS; r++) {
-                if (isEmpty(r, p1.c) && checkLine(p1.r, r, p1.c, false)) {
-                    if (isEmpty(r, p2.c) && checkLine(p1.c, p2.c, r, true) && checkLine(r, p2.r, p2.c, false)) return true;
-                }
-            }
-            for (let c = -1; c <= COLS; c++) {
-                if (isEmpty(p1.r, c) && checkLine(p1.c, c, p1.r, true)) {
-                    if (isEmpty(p2.r, c) && checkLine(p1.r, p2.r, c, false) && checkLine(c, p2.c, p2.r, true)) return true;
-                }
-            }
+            if (p1.r === p2.r && checkL(p1.c, p2.c, p1.r, true)) return true;
+            if (p1.c === p2.c && checkL(p1.r, p2.r, p1.c, false)) return true;
+            if (isEmpty(p1.r, p2.c) && checkL(p1.c, p2.c, p1.r, true) && checkL(p1.r, p2.r, p2.c, false)) return true;
+            if (isEmpty(p2.r, p1.c) && checkL(p1.r, p2.r, p1.c, false) && checkL(p1.c, p2.c, p2.r, true)) return true;
+            for (let r = -1; r <= ROWS; r++)
+                if (isEmpty(r, p1.c) && checkL(p1.r, r, p1.c, false) && isEmpty(r, p2.c) && checkL(p1.c, p2.c, r, true) && checkL(r, p2.r, p2.c, false)) return true;
+            for (let c = -1; c <= COLS; c++)
+                if (isEmpty(p1.r, c) && checkL(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkL(p1.r, p2.r, c, false) && checkL(c, p2.c, p2.r, true)) return true;
             return false;
         }
 
         function resetGame() { initGame(); }
 
-        // HIỆU ỨNG BƯỚM & NHẠC (Giữ nguyên)
+        // HỆ THỐNG BƯỚM BAY
         function createButterfly() {
             const container = document.getElementById('butterfly-container');
-            const img = document.createElement('img');
-            img.src = 'butterfly.gif'; img.className = 'butterfly';
-            const size = Math.random() * 0.4 + 0.5; img.style.setProperty('--size', size);
-            img.style.setProperty('--start-top', Math.random() * 80 + 10 + '%');
-            img.style.setProperty('--end-top', Math.random() * 80 + 10 + '%');
-            img.style.setProperty('--start-left', Math.random() * 80 + 10 + '%');
-            img.style.setProperty('--end-left', Math.random() * 80 + 10 + '%');
-            img.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*10+15) + 's linear infinite';
-            container.appendChild(img);
-            setTimeout(() => img.remove(), 25000);
+            const b = document.createElement('img');
+            b.src = 'butterfly.gif'; b.className = 'butterfly';
+            b.style.setProperty('--s', Math.random() * 0.3 + 0.5);
+            b.style.setProperty('--t', Math.random() * 90 + '%');
+            b.style.setProperty('--et', Math.random() * 90 + '%');
+            b.style.setProperty('--l', Math.random() * 90 + '%');
+            b.style.setProperty('--el', Math.random() * 90 + '%');
+            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*10+15) + 's linear forwards';
+            container.appendChild(b);
+            setTimeout(() => b.remove(), 25000);
         }
-        setInterval(createButterfly, 4000);
 
-        const music = document.getElementById('bg-music');
-        function toggleMusic() {
-            if (music.paused) { music.play(); document.getElementById('music-text').innerText = "Đang Phát"; } 
-            else { music.pause(); document.getElementById('music-text').innerText = "Đã Tắt"; }
+        function toggleButterflies() {
+            const txt = document.getElementById('btf-text');
+            const container = document.getElementById('butterfly-container');
+            if (isButterflyActive) {
+                clearInterval(butterflyInterval);
+                container.style.display = 'none';
+                txt.innerText = "Bật Bướm";
+            } else {
+                container.style.display = 'block';
+                butterflyInterval = setInterval(createButterfly, 4500);
+                txt.innerText = "Tắt Bướm";
+            }
+            isButterflyActive = !isButterflyActive;
         }
-        window.onload = initGame;
+
+        // ĐIỀU KHIỂN NHẠC
+        function toggleMusic() {
+            const m = document.getElementById('bg-music');
+            m.paused ? m.play() : m.pause();
+        }
+
+        window.onload = function() {
+            initGame();
+            butterflyInterval = setInterval(createButterfly, 4500);
+        };
     </script>
 </body>
 </html>

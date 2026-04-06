@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yên Lộc - 15 Ảnh Vừa Khung</title>
+    <title>Yên Lộc - Gọn Gàng Cho Mobile</title>
     <style>
         :root {
-            /* Kích thước mặc định cho Máy tính */
             --tile-w: 60px;
             --tile-h: 70px;
             --cols: 10;
             --rows: 8;
         }
 
-        /* Tối ưu cực hạn cho Điện thoại */
+        /* TỐI ƯU RIÊNG CHO MOBILE */
         @media (max-width: 600px) {
             :root {
-                --tile-w: 15vw; /* Nhỏ lại để vừa chiều rộng */
-                --tile-h: 8.5vh; /* Ngắn lại để vừa chiều cao */
-                --cols: 6;      /* 6 cột */
-                --rows: 10;     /* 10 hàng => Tổng 60 ô (vừa khít 15 ảnh x 4) */
+                --tile-w: 14vw;  /* Nhỏ lại để không tràn ngang */
+                --tile-h: 7.5vh; /* Ngắn lại để không tràn dọc */
+                --cols: 6; 
+                --rows: 8;      /* Chỉ để 8 hàng cho gọn khung hình */
             }
-            h1 { font-size: 1.2rem !important; margin: 2px 0 !important; }
-            p { font-size: 0.7rem !important; margin-bottom: 5px !important; }
+            h1 { font-size: 1.1rem !important; margin: 0 !important; }
+            p { font-size: 0.65rem !important; margin: 2px 0 8px 0 !important; }
+            .btn-chill { padding: 7px 14px !important; font-size: 0.75rem !important; }
         }
 
         body, html {
@@ -35,7 +35,10 @@
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); z-index: 1; }
         
         #game-container {
-            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; 
+            top: 45%; /* Đẩy lên trên một chút để chừa chỗ cho nút ở dưới */
+            left: 50%; 
+            transform: translate(-50%, -50%);
             z-index: 5; display: flex; flex-direction: column; align-items: center; width: 100%;
         }
 
@@ -43,7 +46,7 @@
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 3px; padding: 6px;
+            gap: 3px; padding: 5px;
             background: rgba(255, 255, 255, 0.12);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -61,22 +64,23 @@
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
         .game-header { color: white; text-align: center; text-shadow: 1px 1px 4px #000; }
-        .btn-chill {
-            padding: 8px 16px; background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
-            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.8rem;
+        
+        /* CỤM NÚT ĐIỀU KHIỂN DƯỚI CÙNG */
+        .controls-wrapper {
+            position: fixed; 
+            bottom: 25px; /* Cách đáy màn hình một khoảng an toàn */
+            left: 0; right: 0;
+            z-index: 100;
+            display: flex; 
+            justify-content: center; /* Căn giữa 2 nút */
+            gap: 15px;
         }
 
         #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .butterfly { position: absolute; width: 35px; height: 35px; }
+        .butterfly { position: absolute; width: 32px; height: 32px; }
         
-        @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 110%; top: var(--et); opacity: 0; } }
-        @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
-        
-        .controls-wrapper {
-            position: fixed; bottom: 12px; right: 10px; z-index: 100;
-            display: flex; gap: 8px;
-        }
+        @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 100% { left: 110%; top: var(--et); opacity: 0; } }
+        @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -86,7 +90,7 @@
     <div id="game-container">
         <div class="game-header">
             <h1>YÊN LỘC</h1>
-            <p>15 khoảnh khắc yêu thương</p>
+            <p>Góc nhỏ của 15 niềm vui</p>
         </div>
         <div id="game-board"></div>
         <button class="btn-chill" style="margin-top:10px" onclick="resetGame()">Ván Mới</button>
@@ -103,7 +107,7 @@
 
     <script>
         const isMobile = window.innerWidth <= 600;
-        const ROWS = isMobile ? 10 : 8; 
+        const ROWS = isMobile ? 8 : 8; 
         const COLS = isMobile ? 6 : 10; 
 
         const childImages = [
@@ -120,10 +124,7 @@
         function initGame() {
             const gameBoard = document.getElementById('game-board');
             gameBoard.innerHTML = '';
-            board = [];
-            selectedTiles = [];
-            matchedCount = 0;
-
+            board = []; selectedTiles = []; matchedCount = 0;
             let tileList = [];
             const totalPairs = (ROWS * COLS) / 2;
 
@@ -156,8 +157,7 @@
             if (board[r][c] === -1) return;
             const tile = document.getElementById(`tile-${r}-${c}`);
             if (selectedTiles.length === 1 && selectedTiles[0].r === r && selectedTiles[0].c === c) {
-                tile.classList.remove('selected');
-                selectedTiles = []; return;
+                tile.classList.remove('selected'); selectedTiles = []; return;
             }
             tile.classList.add('selected');
             selectedTiles.push({ r, c, idx: board[r][c] });
@@ -169,7 +169,6 @@
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
                         board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
                         matchedCount += 2;
-                        if (matchedCount === ROWS * COLS) alert("Hoàn thành ván chơi!");
                     }, 200);
                 } else {
                     setTimeout(() => {
@@ -183,19 +182,19 @@
 
         function checkConnect(p1, p2) {
             const isEmpty = (r, c) => (r >= -1 && r <= ROWS && c >= -1 && c <= COLS && board[r][c] === -1);
-            const checkLine = (v1, v2, f, isR) => {
+            const checkL = (v1, v2, f, isR) => {
                 for (let i = Math.min(v1, v2) + 1; i < Math.max(v1, v2); i++)
                     if (isR ? !isEmpty(f, i) : !isEmpty(i, f)) return false;
                 return true;
             };
-            if (p1.r === p2.r && checkLine(p1.c, p2.c, p1.r, true)) return true;
-            if (p1.c === p2.c && checkLine(p1.r, p2.r, p1.c, false)) return true;
-            if (isEmpty(p1.r, p2.c) && checkLine(p1.c, p2.c, p1.r, true) && checkLine(p1.r, p2.r, p2.c, false)) return true;
-            if (isEmpty(p2.r, p1.c) && checkLine(p1.r, p2.r, p1.c, false) && checkLine(p1.c, p2.c, p2.r, true)) return true;
+            if (p1.r === p2.r && checkL(p1.c, p2.c, p1.r, true)) return true;
+            if (p1.c === p2.c && checkL(p1.r, p2.r, p1.c, false)) return true;
+            if (isEmpty(p1.r, p2.c) && checkL(p1.c, p2.c, p1.r, true) && checkL(p1.r, p2.r, p2.c, false)) return true;
+            if (isEmpty(p2.r, p1.c) && checkL(p1.r, p2.r, p1.c, false) && checkL(p1.c, p2.c, p2.r, true)) return true;
             for (let r = -1; r <= ROWS; r++)
-                if (isEmpty(r, p1.c) && checkLine(p1.r, r, p1.c, false) && isEmpty(r, p2.c) && checkLine(p1.c, p2.c, r, true) && checkLine(r, p2.r, p2.c, false)) return true;
+                if (isEmpty(r, p1.c) && checkL(p1.r, r, p1.c, false) && isEmpty(r, p2.c) && checkL(p1.c, p2.c, r, true) && checkL(r, p2.r, p2.c, false)) return true;
             for (let c = -1; c <= COLS; c++)
-                if (isEmpty(p1.r, c) && checkLine(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkLine(p1.r, p2.r, c, false) && checkLine(c, p2.c, p2.r, true)) return true;
+                if (isEmpty(p1.r, c) && checkL(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkL(p1.r, p2.r, c, false) && checkL(c, p2.c, p2.r, true)) return true;
             return false;
         }
 
@@ -208,9 +207,9 @@
             b.style.setProperty('--et', Math.random() * 90 + '%');
             b.style.setProperty('--l', Math.random() * 90 + '%');
             b.style.setProperty('--el', Math.random() * 90 + '%');
-            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*6+10) + 's linear forwards';
+            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*6+8) + 's linear forwards';
             container.appendChild(b);
-            setTimeout(() => b.remove(), 16000);
+            setTimeout(() => b.remove(), 14000);
         }
 
         function toggleButterflies() {

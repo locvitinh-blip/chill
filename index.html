@@ -3,18 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yến Lộc - Thử Thách 4 Màn</title>
+    <title>Yên Lộc - Thông Minh & Không Kẹt</title>
     <style>
-        :root {
-            --tile-w: 14vw;
-            --tile-h: 7.5vh;
-            --cols: 4;
-            --rows: 5;
-        }
-
-        @media (min-width: 600px) {
-            :root { --tile-w: 60px; --tile-h: 75px; }
-        }
+        :root { --tile-w: 14vw; --tile-h: 7.5vh; --cols: 4; --rows: 5; }
+        @media (min-width: 600px) { :root { --tile-w: 60px; --tile-h: 75px; } }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
@@ -78,11 +70,11 @@
 
     <div id="game-container">
         <div class="game-header">
-            <h1>DÂU VÀ RY</h1>
+            <h1>YÊN LỘC</h1>
             <div id="level-info">MÀN 1</div>
         </div>
         <div id="game-board"></div>
-        <button class="btn-chill" style="margin-top:10px" onclick="resetLevel()">Chơi Lại Màn Này</button>
+        <button class="btn-chill" style="margin-top:10px" onclick="manualShuffle()">Đổi Vị Trí (Nếu Kẹt)</button>
     </div>
 
     <div id="butterfly-container"></div>
@@ -95,20 +87,15 @@
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
 
     <script>
-        // Cấu hình 4 màn chơi
         const levels = [
-            { name: "MÀN 1: KHỞI ĐẦU", cols: 4, rows: 4, tileW: "18vw", tileH: "10vh" }, // 16 ô (8 cặp)
-            { name: "MÀN 2: DỄ THƯƠNG", cols: 4, rows: 6, tileW: "17vw", tileH: "9vh" },  // 24 ô (12 cặp)
-            { name: "MÀN 3: GẮN KẾT", cols: 6, rows: 6, tileW: "14vw", tileH: "8vh" },   // 36 ô (18 cặp)
-            { name: "MÀN 4: YÊU THƯƠNG", cols: 6, rows: 10, tileW: "13vw", tileH: "7vh" } // 60 ô (30 cặp)
+            { name: "MÀN 1: KHỞI ĐẦU", cols: 4, rows: 4, tileW: "18vw", tileH: "10vh" },
+            { name: "MÀN 2: DỄ THƯƠNG", cols: 4, rows: 6, tileW: "17vw", tileH: "9vh" },
+            { name: "MÀN 3: GẮN KẾT", cols: 6, rows: 6, tileW: "14vw", tileH: "8vh" },
+            { name: "MÀN 4: YÊU THƯƠNG", cols: 6, rows: 10, tileW: "13vw", tileH: "7vh" }
         ];
 
         let currentLevelIdx = 0;
-        const childImages = [
-            'images/con1.jpg', 'images/con2.jpg', 'images/con3.jpg', 'images/con4.jpg', 'images/con5.jpg',
-            'images/con6.jpg', 'images/con7.jpg', 'images/con8.jpg', 'images/con9.jpg', 'images/con10.jpg',
-            'images/con11.jpg', 'images/con12.jpg', 'images/con13.jpg', 'images/con14.jpg', 'images/con15.jpg'
-        ];
+        const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
         let board = []; 
         let selectedTiles = [];
@@ -120,7 +107,6 @@
             const gameBoard = document.getElementById('game-board');
             document.getElementById('level-info').innerText = level.name;
 
-            // Cập nhật kích thước ô và số cột/hàng vào CSS
             document.documentElement.style.setProperty('--cols', level.cols);
             document.documentElement.style.setProperty('--rows', level.rows);
             if(window.innerWidth <= 600) {
@@ -147,18 +133,24 @@
                     } else {
                         let imgIdx = tileList.pop();
                         board[r][c] = imgIdx;
-                        const tile = document.createElement('div');
-                        tile.className = 'tile';
-                        tile.id = `tile-${r}-${c}`;
-                        tile.style.backgroundImage = `url('${childImages[imgIdx]}')`;
-                        tile.onclick = () => handleTileClick(r, c, level.rows, level.cols);
-                        gameBoard.appendChild(tile);
+                        createTileUI(r, c, imgIdx);
                     }
                 }
             }
+            checkAndAutoShuffle(); // Kiểm tra ngay khi vào màn
         }
 
-        function handleTileClick(r, c, maxR, maxC) {
+        function createTileUI(r, c, imgIdx) {
+            const gameBoard = document.getElementById('game-board');
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.id = `tile-${r}-${c}`;
+            tile.style.backgroundImage = `url('${childImages[imgIdx]}')`;
+            tile.onclick = () => handleTileClick(r, c);
+            gameBoard.appendChild(tile);
+        }
+
+        function handleTileClick(r, c) {
             if (board[r][c] === -1) return;
             const tile = document.getElementById(`tile-${r}-${c}`);
             if (selectedTiles.length === 1 && selectedTiles[0].r === r && selectedTiles[0].c === c) {
@@ -169,13 +161,15 @@
 
             if (selectedTiles.length === 2) {
                 const t1 = selectedTiles[0], t2 = selectedTiles[1];
-                if (t1.idx === t2.idx && checkConnect(t1, t2, maxR, maxC)) {
+                const level = levels[currentLevelIdx];
+                if (t1.idx === t2.idx && checkConnect(t1, t2, level.rows, level.cols)) {
                     setTimeout(() => {
                         document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
                         board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
                         matchedCount += 2;
-                        if (matchedCount === maxR * maxC) nextLevel();
+                        if (matchedCount === level.rows * level.cols) nextLevel();
+                        else checkAndAutoShuffle(); // Sau mỗi nước đi, kiểm tra xem còn nước không
                     }, 200);
                 } else {
                     setTimeout(() => {
@@ -187,16 +181,57 @@
             }
         }
 
-        function nextLevel() {
-            if (currentLevelIdx < levels.length - 1) {
-                alert("Tuyệt vời! Qua màn tiếp theo nhé!");
-                currentLevelIdx++;
-                initLevel();
-            } else {
-                alert("Chúc mừng! Bạn đã hoàn thành tất cả các màn chơi của con!");
-                currentLevelIdx = 0;
-                initLevel();
+        // THUẬT TOÁN KIỂM TRA NƯỚC ĐI CÒN LẠI
+        function checkAndAutoShuffle() {
+            const level = levels[currentLevelIdx];
+            let hasMove = false;
+            let activeTiles = [];
+
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    if (board[r][c] !== -1) activeTiles.push({ r, c, idx: board[r][c] });
+                }
             }
+
+            for (let i = 0; i < activeTiles.length; i++) {
+                for (let j = i + 1; j < activeTiles.length; j++) {
+                    if (activeTiles[i].idx === activeTiles[j].idx && checkConnect(activeTiles[i], activeTiles[j], level.rows, level.cols)) {
+                        hasMove = true; break;
+                    }
+                }
+                if (hasMove) break;
+            }
+
+            if (!hasMove && matchedCount < level.rows * level.cols) {
+                console.log("Hết nước đi, đang tự động đảo bài...");
+                manualShuffle();
+            }
+        }
+
+        function manualShuffle() {
+            const level = levels[currentLevelIdx];
+            let currentImages = [];
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    if (board[r][c] !== -1) currentImages.push(board[r][c]);
+                }
+            }
+            currentImages.sort(() => Math.random() - 0.5);
+
+            let idx = 0;
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    if (board[r][c] !== -1) {
+                        board[r][c] = currentImages[idx++];
+                        const tile = document.getElementById(`tile-${r}-${c}`);
+                        tile.style.backgroundImage = `url('${childImages[board[r][c]]}')`;
+                        tile.classList.remove('selected');
+                    }
+                }
+            }
+            selectedTiles = [];
+            // Sau khi đảo, kiểm tra lại xem có nước chưa, nếu vẫn chưa thì đảo tiếp (đệ quy)
+            checkAndAutoShuffle();
         }
 
         function checkConnect(p1, p2, maxR, maxC) {
@@ -215,6 +250,18 @@
             for (let c = -1; c <= maxC; c++)
                 if (isEmpty(p1.r, c) && checkL(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkL(p1.r, p2.r, c, false) && checkL(c, p2.c, p2.r, true)) return true;
             return false;
+        }
+
+        function nextLevel() {
+            if (currentLevelIdx < levels.length - 1) {
+                alert("Tuyệt vời! Qua màn tiếp theo nhé!");
+                currentLevelIdx++;
+                initLevel();
+            } else {
+                alert("Chúc mừng! Bạn đã hoàn thành tất cả các màn!");
+                currentLevelIdx = 0;
+                initLevel();
+            }
         }
 
         function createButterfly() {
@@ -241,7 +288,6 @@
             m.paused ? m.play() : m.pause();
         }
 
-        function resetLevel() { initLevel(); }
         window.onload = () => { initLevel(); setInterval(createButterfly, 4500); };
     </script>
 </body>

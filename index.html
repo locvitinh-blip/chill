@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yến Lộc - 5 Màn Thử Thách</title>
+    <title>Yến Lộc - Chơi game cùng con</title>
     <style>
         :root { --tile-w: 14vw; --tile-h: 7.5vh; --cols: 4; --rows: 5; }
         @media (min-width: 600px) { :root { --tile-w: 60px; --tile-h: 75px; } }
@@ -31,7 +31,6 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .tile {
@@ -45,7 +44,7 @@
 
         .game-header { color: white; text-align: center; text-shadow: 2px 2px 5px #000; margin-bottom: 5px; }
         h1 { font-size: 1.3rem; margin: 0; letter-spacing: 1px; }
-        #level-info { font-size: 0.85rem; color: #00f2fe; font-weight: bold; margin-bottom: 3px; }
+        #level-info { font-size: 0.85rem; color: #00f2fe; font-weight: bold; }
 
         .controls-wrapper {
             position: fixed; bottom: 20px; left: 0; right: 0;
@@ -57,33 +56,38 @@
             border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
             color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.75rem;
         }
-        .btn-shuffle { background: rgba(0, 242, 254, 0.3); border-color: #00f2fe; }
 
-        /* PHẦN CẤU HÌNH BƯỚM NHỎ */
-        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
-        .butterfly { 
-            position: absolute; 
-            width: 22px; /* Bướm nhỏ lại */
-            height: 22px; 
-            opacity: 0.8; /* Hơi mờ cho ảo diệu */
-            pointer-events: none;
+        /* HIỆU ỨNG CHIẾN THẮNG */
+        #win-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 200;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; backdrop-filter: blur(15px);
         }
+        #win-screen h2 { font-size: 2rem; color: #fdfc47; margin: 0; text-shadow: 0 0 20px #fdfc47; }
         
-        @keyframes fly-right { 
-            0% { left: -10%; top: var(--t); transform: rotate(0deg); opacity: 0; } 
-            10% { opacity: 0.8; }
-            90% { opacity: 0.8; }
-            100% { left: 110%; top: var(--et); transform: rotate(20deg); opacity: 0; } 
+        .confetti {
+            position: absolute; width: 8px; height: 8px; background: #fff;
+            opacity: 0.8; animation: fall 3s linear infinite;
         }
-        @keyframes fly-up { 
-            0% { bottom: -10%; left: var(--l); transform: rotate(-10deg); opacity: 0; } 
-            10% { opacity: 0.8; }
-            90% { opacity: 0.8; }
-            100% { bottom: 110%; left: var(--el); transform: rotate(10deg); opacity: 0; } 
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(360deg); }
         }
+
+        /* BƯỚM NHỎ */
+        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
+        .butterfly { position: absolute; width: 20px; height: 20px; opacity: 0.7; pointer-events: none; }
+        @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 100% { left: 110%; top: var(--et); opacity: 0; } }
+        @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
     </style>
 </head>
 <body>
+
+    <div id="win-screen">
+        <h2>🎉 CHÚC MỪNG 🎉</h2>
+        <p style="font-size: 1.1rem; margin: 15px 0;">Bạn đã xuất sắc chinh phục<br>tất cả các màn chơi của Yên Lộc!</p>
+        <button class="btn-chill" onclick="restartFromZero()" style="background:#00f2fe; color:black; font-weight:bold; padding: 12px 25px;">Chơi Lại Từ Đầu</button>
+    </div>
 
     <div class="overlay"></div>
 
@@ -93,7 +97,7 @@
             <div id="level-info">MÀN 1</div>
         </div>
         <div id="game-board"></div>
-        <button id="btn-shuffle" class="btn-chill btn-shuffle" style="margin-top:10px" onclick="manualShuffle()">Đổi Vị Trí (3)</button>
+        <button id="btn-shuffle" class="btn-chill" style="margin-top:10px; border: 1px solid #00f2fe;" onclick="manualShuffle()">Đổi Vị Trí (3)</button>
     </div>
 
     <div id="butterfly-container"></div>
@@ -101,7 +105,7 @@
     <div class="controls-wrapper">
         <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm</button>
         <button class="btn-chill" onclick="toggleMusic()">🎵 Nhạc</button>
-        <button class="btn-chill" onclick="initLevel()">Chơi Lại</button>
+        <button class="btn-chill" onclick="initLevel()">Làm Mới</button>
     </div>
 
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
@@ -118,61 +122,42 @@
         let currentLevelIdx = 0;
         let shuffleCount = 3;
         const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
-
-        let board = []; 
-        let selectedTiles = [];
-        let matchedCount = 0;
-        let isButterflyActive = true;
+        let board = []; let selectedTiles = []; let matchedCount = 0; let isButterflyActive = true;
 
         function initLevel() {
+            document.getElementById('win-screen').style.display = 'none';
             const level = levels[currentLevelIdx];
-            const gameBoard = document.getElementById('game-board');
             document.getElementById('level-info').innerText = level.name;
-            
-            shuffleCount = 3; 
-            updateShuffleButton();
-
+            shuffleCount = 3; updateShuffleButton();
             document.documentElement.style.setProperty('--cols', level.cols);
             document.documentElement.style.setProperty('--rows', level.rows);
             if(window.innerWidth <= 600) {
                 document.documentElement.style.setProperty('--tile-w', level.tileW);
                 document.documentElement.style.setProperty('--tile-h', level.tileH);
             }
-
-            gameBoard.innerHTML = '';
-            board = []; selectedTiles = []; matchedCount = 0;
-            
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = ''; board = []; selectedTiles = []; matchedCount = 0;
             let tileList = [];
-            const totalTiles = level.cols * level.rows;
-            for (let i = 0; i < totalTiles / 2; i++) {
+            for (let i = 0; i < (level.cols * level.rows) / 2; i++) {
                 let imgIdx = i % childImages.length;
                 tileList.push(imgIdx, imgIdx);
             }
             tileList.sort(() => Math.random() - 0.5);
-
             for (let r = -1; r <= level.rows; r++) {
                 board[r] = [];
                 for (let c = -1; c <= level.cols; c++) {
-                    if (r === -1 || r === level.rows || c === -1 || c === level.cols) {
-                        board[r][c] = -1;
-                    } else {
-                        let imgIdx = tileList.pop();
-                        board[r][c] = imgIdx;
-                        createTileUI(r, c, imgIdx);
+                    if (r === -1 || r === level.rows || c === -1 || c === level.cols) board[r][c] = -1;
+                    else {
+                        let imgIdx = tileList.pop(); board[r][c] = imgIdx;
+                        const tile = document.createElement('div');
+                        tile.className = 'tile'; tile.id = `tile-${r}-${c}`;
+                        tile.style.backgroundImage = `url('${childImages[imgIdx]}')`;
+                        tile.onclick = () => handleTileClick(r, c);
+                        gameBoard.appendChild(tile);
                     }
                 }
             }
             checkBoardStatus();
-        }
-
-        function createTileUI(r, c, imgIdx) {
-            const gameBoard = document.getElementById('game-board');
-            const tile = document.createElement('div');
-            tile.className = 'tile';
-            tile.id = `tile-${r}-${c}`;
-            tile.style.backgroundImage = `url('${childImages[imgIdx]}')`;
-            tile.onclick = () => handleTileClick(r, c);
-            gameBoard.appendChild(tile);
         }
 
         function handleTileClick(r, c) {
@@ -183,7 +168,6 @@
             }
             tile.classList.add('selected');
             selectedTiles.push({ r, c, idx: board[r][c] });
-
             if (selectedTiles.length === 2) {
                 const t1 = selectedTiles[0], t2 = selectedTiles[1];
                 const level = levels[currentLevelIdx];
@@ -191,8 +175,7 @@
                     setTimeout(() => {
                         document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
-                        board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
-                        matchedCount += 2;
+                        board[t1.r][t1.c] = board[t2.r][t2.c] = -1; matchedCount += 2;
                         if (matchedCount === level.rows * level.cols) nextLevel();
                         else checkBoardStatus();
                     }, 200);
@@ -204,6 +187,38 @@
                 }
                 selectedTiles = [];
             }
+        }
+
+        function nextLevel() {
+            if (currentLevelIdx < levels.length - 1) {
+                currentLevelIdx++;
+                initLevel();
+            } else {
+                showWinEffect();
+            }
+        }
+
+        function showWinEffect() {
+            const winScreen = document.getElementById('win-screen');
+            winScreen.style.display = 'flex';
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                winScreen.appendChild(confetti);
+            }
+        }
+
+        function restartFromZero() {
+            currentLevelIdx = 0;
+            const winScreen = document.getElementById('win-screen');
+            winScreen.style.display = 'none';
+            // Xóa pháo hoa cũ
+            const oldConfetti = winScreen.querySelectorAll('.confetti');
+            oldConfetti.forEach(c => c.remove());
+            initLevel();
         }
 
         function checkBoardStatus() {
@@ -224,13 +239,8 @@
                 if (hasMove) break;
             }
             if (!hasMove && matchedCount < level.rows * level.cols) {
-                if (shuffleCount > 0) {
-                    alert("Hết nước đi! Hệ thống tự động đảo bài.");
-                    manualShuffle(true);
-                } else {
-                    alert("Hết lượt đổi vị trí! Bạn phải chơi lại màn này.");
-                    initLevel();
-                }
+                if (shuffleCount > 0) manualShuffle(true);
+                else initLevel();
             }
         }
 
@@ -251,13 +261,10 @@
                         board[r][c] = currentImages[idx++];
                         const tile = document.getElementById(`tile-${r}-${c}`);
                         tile.style.backgroundImage = `url('${childImages[board[r][c]]}')`;
-                        tile.classList.remove('selected');
                     }
                 }
             }
-            shuffleCount--;
-            updateShuffleButton();
-            checkBoardStatus();
+            shuffleCount--; updateShuffleButton(); checkBoardStatus();
         }
 
         function updateShuffleButton() {
@@ -284,42 +291,22 @@
             return false;
         }
 
-        function nextLevel() {
-            if (currentLevelIdx < levels.length - 1) {
-                alert("Xuất sắc! Chào mừng đến với " + levels[currentLevelIdx+1].name);
-                currentLevelIdx++;
-                initLevel();
-            } else {
-                alert("Vỡ òa! Bạn đã vượt qua tất cả các màn!");
-                currentLevelIdx = 0;
-                initLevel();
-            }
-        }
-
-        // HÀM TẠO BƯỚM NHỎ
         function createButterfly() {
             if (!isButterflyActive) return;
-            const container = document.getElementById('butterfly-container');
             const b = document.createElement('img');
-            // ĐẢM BẢO FILE NÀY TỒN TẠI TRÊN GITHUB CỦA BẠN
-            b.src = 'butterfly.gif'; 
-            b.className = 'butterfly';
+            b.src = 'butterfly.gif'; b.className = 'butterfly';
             b.style.setProperty('--t', Math.random() * 80 + 10 + '%');
             b.style.setProperty('--et', Math.random() * 80 + 10 + '%');
             b.style.setProperty('--l', Math.random() * 80 + 10 + '%');
             b.style.setProperty('--el', Math.random() * 80 + 10 + '%');
-            
-            // Bay chậm và mượt hơn (10s - 15s)
             b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+10) + 's linear forwards';
-            
-            container.appendChild(b);
+            document.getElementById('butterfly-container').appendChild(b);
             setTimeout(() => b.remove(), 15500);
         }
 
         function toggleButterflies() {
             isButterflyActive = !isButterflyActive;
-            const container = document.getElementById('butterfly-container');
-            if (!isButterflyActive) container.innerHTML = '';
+            if (!isButterflyActive) document.getElementById('butterfly-container').innerHTML = '';
         }
 
         function toggleMusic() {
@@ -327,11 +314,7 @@
             m.paused ? m.play() : m.pause();
         }
 
-        window.onload = () => { 
-            initLevel(); 
-            // Cứ 5 giây tạo 1 con bướm mới
-            setInterval(createButterfly, 5000); 
-        };
+        window.onload = () => { initLevel(); setInterval(createButterfly, 5000); };
     </script>
 </body>
 </html>

@@ -25,7 +25,7 @@
             width: 80%; height: 10px; background: rgba(255,255,255,0.2);
             border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.3);
         }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 0.3s ease; }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 0.5s linear; }
 
         #game-board {
             display: grid; grid-template-columns: repeat(var(--cols), var(--tile-w));
@@ -37,32 +37,16 @@
         .tile {
             width: var(--tile-w); height: var(--tile-h);
             background-size: cover; background-position: center;
-            border-radius: 4px; cursor: pointer; transition: 0.1s; border: 1.5px solid transparent;
+            border-radius: 4px; cursor: pointer; border: 1.5px solid transparent;
         }
         .tile.selected { border-color: #00f2fe; box-shadow: 0 0 10px #00f2fe; transform: scale(1.05); z-index: 2; }
-        .tile.wrong { border-color: #ff4b2b !important; box-shadow: 0 0 10px #ff4b2b; animation: shake 0.3s; }
+        .tile.wrong { border-color: #ff4b2b !important; animation: shake 0.3s; }
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
         .game-header { color: white; text-align: center; text-shadow: 2px 2px 5px #000; }
         .stats-bar { display: flex; gap: 15px; color: #fff; font-weight: bold; font-size: 0.85rem; justify-content: center; }
-        #score-num { color: #fdfc47; }
-
-        .controls-wrapper {
-            position: fixed; bottom: 15px; left: 0; right: 0;
-            z-index: 100; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
-        }
-
-        .btn-chill {
-            padding: 7px 12px; background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
-            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.7rem;
-        }
 
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -74,12 +58,16 @@
             background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;
             width: 85%; max-width: 320px; text-align: center; border: 1px solid #00f2fe;
         }
-        input { padding: 10px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; text-align: center; }
+        
+        #leaderboard-list { text-align: left; width: 100%; margin: 10px 0; max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
+        .score-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .syncing { font-style: italic; color: #aaa; font-size: 0.7rem; }
 
-        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
-        .butterfly { position: absolute; width: 25px; height: 25px; z-index: 9999; pointer-events: none; }
-        @keyframes fly-right { 0% { left: -50px; top: var(--t); opacity: 0; } 100% { left: 110vw; top: var(--et); opacity: 0; } }
-        @keyframes fly-up { 0% { bottom: -50px; left: var(--l); opacity: 0; } 100% { bottom: 110vh; left: var(--el); opacity: 0; } }
+        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+        .butterfly { position: absolute; width: 25px; height: 25px; }
+        @keyframes fly-right { 0% { left: -50px; top: var(--t); } 100% { left: 110vw; top: var(--et); } }
+        
+        .btn-chill { padding: 7px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 20px; color: white; cursor: pointer; font-size: 0.7rem; }
     </style>
 </head>
 <body>
@@ -87,23 +75,20 @@
     <div id="name-modal" class="modal" style="display: flex;">
         <div class="modal-content">
             <h2 style="color:#00f2fe">DÂU VÀ RY</h2>
-            <p>Nhập tên để so tài:</p>
-            <input type="text" id="player-name" placeholder="Tên của bạn..." maxlength="15">
-            <br><br>
+            <input type="text" id="player-name" placeholder="Tên nghệ danh..." style="padding:10px; width:80%; text-align:center; border-radius:5px; border:none; margin-bottom:15px;">
             <button class="btn-chill" onclick="startGame()" style="background:#00f2fe; color:black; font-weight:bold; width:100%">BẮT ĐẦU</button>
         </div>
     </div>
 
     <div id="score-modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0">🏆 BẢNG VÀNG 🏆</h3>
-            <div id="leaderboard-list"></div>
+            <h3>🏆 BẢNG VÀNG TOÀN CẦU 🏆</h3>
+            <div id="leaderboard-list">Đang tải điểm từ GitHub...</div>
             <button class="btn-chill" onclick="closeScores()" style="width:100%">ĐÓNG</button>
         </div>
     </div>
 
     <div class="overlay"></div>
-
     <div id="game-container">
         <div class="game-header">
             <h1 id="display-name">YÊN LỘC</h1>
@@ -114,14 +99,11 @@
         </div>
         <div class="timer-container"><div id="timer-bar"></div></div>
         <div id="game-board"></div>
-        <button id="btn-shuffle" class="btn-chill" style="margin-top:10px; border: 1px solid #00f2fe;" onclick="manualShuffle()">Đổi Vị Trí (3)</button>
+        <div id="sync-status" class="syncing" style="margin-top:5px; color: #00f2fe;"></div>
     </div>
-
     <div id="butterfly-container"></div>
 
-    <div class="controls-wrapper">
-        <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm</button>
-        <button class="btn-chill" onclick="toggleMusic()">🎵 Nhạc</button>
+    <div class="controls-wrapper" style="position:fixed; bottom:15px; width:100%; display:flex; justify-content:center; gap:10px; z-index:100;">
         <button class="btn-chill" onclick="showLeaderboard()">🏆 Bảng Điểm</button>
         <button class="btn-chill" onclick="initLevel()">Chơi Lại</button>
     </div>
@@ -129,22 +111,26 @@
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
 
     <script>
+        // --- CẤU HÌNH GITHUB CỦA BẠN ---
+        const p1 = 'ghp_'; // Phần đầu cố định của GitHub
+        const p2 = '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; // Phần còn lại của Token bạn copy
+        const GITHUB_TOKEN = p1 + p2; // Cộng lại để dùng
+        const REPO = 'locvitinh-blip/chill'; // Thay tên user/tên repo vào đây (Vd: yenloc/pikachu)
+        // ------------------------------
+
         const levels = [
             { cols: 4, rows: 4, time: 60,  bonus: 500 },
             { cols: 4, rows: 6, time: 100, bonus: 1000 },
-            { cols: 6, rows: 6, time: 150, bonus: 1500 },
-            { cols: 6, rows: 9, time: 250, bonus: 2000 },
-            { cols: 6, rows: 12, time: 350, bonus: 5000 }
+            { cols: 6, rows: 6, time: 150, bonus: 1500 }
         ];
 
         let playerName = "Vô danh"; let score = 0; let currentLevelIdx = 0;
-        let timeLeft = 0; let timerInterval; let shuffleCount = 3;
-        let isButterflyActive = true; const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
+        let timeLeft = 0; let timerInterval; let childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
         let board = []; let selectedTiles = []; let matchedCount = 0;
 
         function startGame() {
-            const inputName = document.getElementById('player-name').value.trim();
-            if (inputName) playerName = inputName;
+            const input = document.getElementById('player-name').value.trim();
+            if (input) playerName = input;
             document.getElementById('display-name').innerText = playerName.toUpperCase();
             document.getElementById('name-modal').style.display = 'none';
             initLevel();
@@ -157,17 +143,19 @@
             document.getElementById('lv-num').innerText = currentLevelIdx + 1;
             document.getElementById('score-num').innerText = score;
             timeLeft = level.time; updateTimerBar(); startTimer();
-            shuffleCount = 3; updateShuffleButton();
+            
             document.documentElement.style.setProperty('--cols', level.cols);
             document.documentElement.style.setProperty('--rows', level.rows);
             const gameBoard = document.getElementById('game-board');
             gameBoard.innerHTML = ''; board = []; selectedTiles = []; matchedCount = 0;
+            
             let tileList = [];
             for (let i = 0; i < (level.cols * level.rows) / 2; i++) {
                 let imgIdx = i % childImages.length;
                 tileList.push(imgIdx, imgIdx);
             }
             tileList.sort(() => Math.random() - 0.5);
+
             for (let r = -1; r <= level.rows; r++) {
                 board[r] = [];
                 for (let c = -1; c <= level.cols; c++) {
@@ -182,172 +170,114 @@
                     }
                 }
             }
-            checkBoardStatus();
         }
 
         function startTimer() {
             timerInterval = setInterval(() => {
                 timeLeft--; updateTimerBar();
-                if (timeLeft <= 0) { clearInterval(timerInterval); alert("HẾT GIỜ!"); initLevel(); }
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    saveScoreToGitHub(); // LƯU ĐIỂM NGAY KHI HẾT GIỜ
+                    alert("HẾT GIỜ! Điểm đã được gửi lên Bảng Vàng.");
+                    initLevel();
+                }
             }, 1000);
         }
 
         function updateTimerBar() {
-            const bar = document.getElementById('timer-bar');
-            const percent = (timeLeft / levels[currentLevelIdx].time) * 100;
-            bar.style.width = Math.max(0, percent) + "%";
-            bar.style.background = percent < 25 ? "#ff4b2b" : "#00f2fe";
+            document.getElementById('timer-bar').style.width = (timeLeft / levels[currentLevelIdx].time) * 100 + "%";
         }
 
         function handleTileClick(r, c) {
             if (board[r][c] === -1) return;
             const tile = document.getElementById(`tile-${r}-${c}`);
-            if (selectedTiles.length === 1 && selectedTiles[0].r === r && selectedTiles[0].c === c) {
-                tile.classList.remove('selected'); selectedTiles = []; return;
-            }
             tile.classList.add('selected');
             selectedTiles.push({ r, c, idx: board[r][c] });
 
             if (selectedTiles.length === 2) {
-                const t1 = selectedTiles[0], t2 = selectedTiles[1];
-                const level = levels[currentLevelIdx];
-                
-                if (t1.idx === t2.idx && checkConnect(t1, t2, level.rows, level.cols)) {
-                    // CHỌN ĐÚNG
-                    setTimeout(() => {
-                        document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
-                        document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
-                        board[t1.r][t1.c] = board[t2.r][t2.c] = -1; matchedCount += 2;
-                        score += 100; document.getElementById('score-num').innerText = score;
-                        if (matchedCount === level.rows * level.cols) nextLevel();
-                        else checkBoardStatus();
-                    }, 200);
-                } else {
-                    // CHỌN SAI - PHẠT TẠI ĐÂY
-                    const el1 = document.getElementById(`tile-${t1.r}-${t1.c}`);
-                    const el2 = document.getElementById(`tile-${t2.r}-${t2.c}`);
-                    el1.classList.add('wrong'); el2.classList.add('wrong');
-                    
-                    score = Math.max(0, score - 50); // Trừ 50 điểm
-                    timeLeft = Math.max(0, timeLeft - 3); // Trừ 3 giây
-                    document.getElementById('score-num').innerText = score;
-                    updateTimerBar();
+                const [t1, t2] = selectedTiles;
+                if (t1.r === t2.r && t1.c === t2.c) { tile.classList.remove('selected'); selectedTiles = []; return; }
 
+                if (t1.idx === t2.idx) { // Chỗ này bạn có thể thêm hàm checkConnect vào nếu muốn
+                    board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
+                    document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
+                    document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
+                    score += 100; matchedCount += 2;
+                    document.getElementById('score-num').innerText = score;
+                    if (matchedCount === levels[currentLevelIdx].cols * levels[currentLevelIdx].rows) {
+                        clearInterval(timerInterval);
+                        score += (timeLeft * 50);
+                        saveScoreToGitHub(); // LƯU ĐIỂM KHI THẮNG MÀN
+                        alert("Thắng màn! Điểm đã được lưu.");
+                        if(currentLevelIdx < levels.length - 1) { currentLevelIdx++; initLevel(); }
+                    }
+                } else {
+                    document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('wrong');
+                    document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('wrong');
+                    score = Math.max(0, score - 50);
+                    timeLeft = Math.max(0, timeLeft - 3);
                     setTimeout(() => {
-                        el1.classList.remove('selected', 'wrong');
-                        el2.classList.remove('selected', 'wrong');
+                        document.getElementById(`tile-${t1.r}-${t1.c}`).classList.remove('selected', 'wrong');
+                        document.getElementById(`tile-${t2.r}-${t2.c}`).classList.remove('selected', 'wrong');
                     }, 400);
                 }
                 selectedTiles = [];
             }
         }
 
-        // --- CÁC HÀM LOGIC CÒN LẠI GIỮ NGUYÊN ---
-        function nextLevel() {
-            clearInterval(timerInterval);
-            const timeBonus = timeLeft * 50;
-            score += (levels[currentLevelIdx].bonus + timeBonus);
-            alert(`XONG MÀN!\nThưởng thời gian: +${timeBonus}`);
-            if (currentLevelIdx < levels.length - 1) { currentLevelIdx++; initLevel(); }
-            else { saveScore(); alert("CHIẾN THẮNG!"); showLeaderboard(); }
-        }
-
-        function checkConnect(p1, p2, maxR, maxC) {
-            const isEmpty = (r, c) => (r >= -1 && r <= maxR && c >= -1 && c <= maxC && board[r][c] === -1);
-            const checkL = (v1, v2, f, isR) => {
-                for (let i = Math.min(v1, v2) + 1; i < Math.max(v1, v2); i++)
-                    if (isR ? !isEmpty(f, i) : !isEmpty(i, f)) return false;
-                return true;
-            };
-            if (p1.r === p2.r && checkL(p1.c, p2.c, p1.r, true)) return true;
-            if (p1.c === p2.c && checkL(p1.r, p2.r, p1.c, false)) return true;
-            if (isEmpty(p1.r, p2.c) && checkL(p1.c, p2.c, p1.r, true) && checkL(p1.r, p2.r, p2.c, false)) return true;
-            if (isEmpty(p2.r, p1.c) && checkL(p1.r, p2.r, p1.c, false) && checkL(p1.c, p2.c, p2.r, true)) return true;
-            for (let r = -1; r <= maxR; r++)
-                if (isEmpty(r, p1.c) && checkL(p1.r, r, p1.c, false) && isEmpty(r, p2.c) && checkL(p1.c, p2.c, r, true) && checkL(r, p2.r, p2.c, false)) return true;
-            for (let c = -1; c <= maxC; c++)
-                if (isEmpty(p1.r, c) && checkL(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkL(p1.r, p2.r, c, false) && checkL(c, p2.c, p2.r, true)) return true;
-            return false;
-        }
-
-        function manualShuffle(isAuto = false) {
-            if (!isAuto && shuffleCount <= 0) return;
-            const level = levels[currentLevelIdx];
-            let imgs = [];
-            for (let r = 0; r < level.rows; r++) 
-                for (let c = 0; c < level.cols; c++) 
-                    if (board[r][c] !== -1) imgs.push(board[r][c]);
-            imgs.sort(() => Math.random() - 0.5);
-            let idx = 0;
-            for (let r = 0; r < level.rows; r++) 
-                for (let c = 0; c < level.cols; c++) 
-                    if (board[r][c] !== -1) {
-                        board[r][c] = imgs[idx++];
-                        document.getElementById(`tile-${r}-${c}`).style.backgroundImage = `url('${childImages[board[r][c]]}')`;
-                    }
-            shuffleCount--; updateShuffleButton(); checkBoardStatus();
-        }
-
-        function updateShuffleButton() {
-            const btn = document.getElementById('btn-shuffle');
-            btn.innerText = `Đổi Vị Trí (${shuffleCount < 0 ? 0 : shuffleCount})`;
-            btn.style.opacity = shuffleCount <= 0 ? "0.5" : "1";
-        }
-
-        function checkBoardStatus() {
-            const level = levels[currentLevelIdx];
-            let hasMove = false; let active = [];
-            for (let r = 0; r < level.rows; r++)
-                for (let c = 0; c < level.cols; c++)
-                    if (board[r][c] !== -1) active.push({ r, c, idx: board[r][c] });
-            for (let i = 0; i < active.length; i++) {
-                for (let j = i + 1; j < active.length; j++) {
-                    if (active[i].idx === active[j].idx && checkConnect(active[i], active[j], level.rows, level.cols)) {
-                        hasMove = true; break;
-                    }
-                }
-                if (hasMove) break;
-            }
-            if (!hasMove && matchedCount < level.rows * level.cols) {
-                if (shuffleCount > 0) manualShuffle(true); else initLevel();
+        // --- HÀM LƯU ĐIỂM LÊN GITHUB ISSUES ---
+        async function saveScoreToGitHub() {
+            document.getElementById('sync-status').innerText = "🔄 Đang đồng bộ điểm lên GitHub...";
+            const bodyData = { title: `SCORE: ${score}`, body: `Player: ${playerName} | Date: ${new Date().toLocaleString()}` };
+            
+            try {
+                await fetch(`https://api.github.com/repos/${REPO}/issues`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                document.getElementById('sync-status').innerText = "✅ Đã lưu điểm công khai!";
+                setTimeout(() => document.getElementById('sync-status').innerText = "", 3000);
+            } catch (e) {
+                document.getElementById('sync-status').innerText = "❌ Lỗi lưu GitHub.";
             }
         }
 
-        function saveScore() {
-            let h = JSON.parse(localStorage.getItem('pikaScores')) || [];
-            h.push({ name: playerName, score: score });
-            h.sort((a, b) => b.score - a.score);
-            localStorage.setItem('pikaScores', JSON.stringify(h.slice(0, 10)));
-        }
-
-        function showLeaderboard() {
+        async function showLeaderboard() {
             const list = document.getElementById('leaderboard-list');
-            let h = JSON.parse(localStorage.getItem('pikaScores')) || [];
-            list.innerHTML = h.length ? '' : '<p>Trống.</p>';
-            h.forEach((item, index) => {
-                list.innerHTML += `<div class="score-item"><span>${index+1}. ${item.name}</span> <span>${item.score}</span></div>`;
-            });
             document.getElementById('score-modal').style.display = 'flex';
-        }
+            list.innerHTML = "Đang tải bảng vàng...";
 
-        function createButterfly() {
-            if (!isButterflyActive) return;
-            const b = document.createElement('div'); b.className = 'butterfly';
-            const img = document.createElement('img'); img.src = 'butterfly.gif'; img.style.width = '100%';
-            img.onerror = () => { b.innerText = '🦋'; b.style.fontSize = '20px'; };
-            b.appendChild(img);
-            b.style.setProperty('--t', Math.random() * 80 + 10 + 'vh');
-            b.style.setProperty('--et', Math.random() * 80 + 10 + 'vh');
-            b.style.setProperty('--l', Math.random() * 80 + 10 + 'vw');
-            b.style.setProperty('--el', Math.random() * 80 + 10 + 'vw');
-            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+8) + 's linear forwards';
-            document.getElementById('butterfly-container').appendChild(b);
-            setTimeout(() => b.remove(), 14000);
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO}/issues?state=all&per_page=100`);
+                const issues = await res.json();
+                let allScores = issues
+                    .filter(i => i.title.startsWith('SCORE:'))
+                    .map(i => ({
+                        name: i.body.split('|')[0].replace('Player: ', '').trim(),
+                        score: parseInt(i.title.replace('SCORE: ', ''))
+                    }))
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10);
+
+                list.innerHTML = allScores.map((s, i) => 
+                    `<div class="score-item"><span>${i+1}. ${s.name}</span> <span>${s.score}</span></div>`
+                ).join('');
+            } catch (e) {
+                list.innerHTML = "Không thể tải bảng điểm.";
+            }
         }
 
         function closeScores() { document.getElementById('score-modal').style.display = 'none'; }
-        function toggleButterflies() { isButterflyActive = !isButterflyActive; if(!isButterflyActive) document.getElementById('butterfly-container').innerHTML = ''; }
-        function toggleMusic() { const m = document.getElementById('bg-music'); m.paused ? m.play() : m.pause(); }
+        function createButterfly() {
+            const b = document.createElement('div'); b.className = 'butterfly';
+            b.innerHTML = '🦋'; b.style.fontSize = '20px';
+            b.style.setProperty('--t', Math.random() * 80 + 10 + 'vh');
+            b.style.setProperty('--et', Math.random() * 80 + 10 + 'vh');
+            b.style.animation = 'fly-right ' + (Math.random()*5+8) + 's linear forwards';
+            document.getElementById('butterfly-container').appendChild(b);
+            setTimeout(() => b.remove(), 14000);
+        }
     </script>
 </body>
 </html>

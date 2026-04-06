@@ -25,7 +25,7 @@
             width: 80%; height: 10px; background: rgba(255,255,255,0.2);
             border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.3);
         }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 1s linear; }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 0.3s ease; }
 
         #game-board {
             display: grid; grid-template-columns: repeat(var(--cols), var(--tile-w));
@@ -40,10 +40,18 @@
             border-radius: 4px; cursor: pointer; transition: 0.1s; border: 1.5px solid transparent;
         }
         .tile.selected { border-color: #00f2fe; box-shadow: 0 0 10px #00f2fe; transform: scale(1.05); z-index: 2; }
+        .tile.wrong { border-color: #ff4b2b !important; box-shadow: 0 0 10px #ff4b2b; animation: shake 0.3s; }
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
 
         .game-header { color: white; text-align: center; text-shadow: 2px 2px 5px #000; }
         .stats-bar { display: flex; gap: 15px; color: #fff; font-weight: bold; font-size: 0.85rem; justify-content: center; }
+        #score-num { color: #fdfc47; }
 
         .controls-wrapper {
             position: fixed; bottom: 15px; left: 0; right: 0;
@@ -68,29 +76,10 @@
         }
         input { padding: 10px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; text-align: center; }
 
-        /* PHẦN SỬA LỖI BƯỚM */
-        #butterfly-container { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            pointer-events: none; z-index: 9999; /* Đưa lên trên cùng */
-            overflow: hidden;
-        }
-        .butterfly { 
-            position: absolute; width: 25px; height: 25px; 
-            z-index: 9999; pointer-events: none;
-        }
-
-        @keyframes fly-right { 
-            0% { left: -50px; top: var(--t); opacity: 0; transform: scale(0.5); } 
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { left: 110vw; top: var(--et); opacity: 0; transform: scale(1.2); } 
-        }
-        @keyframes fly-up { 
-            0% { bottom: -50px; left: var(--l); opacity: 0; transform: scale(0.5); } 
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { bottom: 110vh; left: var(--el); opacity: 0; transform: scale(1.2); } 
-        }
+        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
+        .butterfly { position: absolute; width: 25px; height: 25px; z-index: 9999; pointer-events: none; }
+        @keyframes fly-right { 0% { left: -50px; top: var(--t); opacity: 0; } 100% { left: 110vw; top: var(--et); opacity: 0; } }
+        @keyframes fly-up { 0% { bottom: -50px; left: var(--l); opacity: 0; } 100% { bottom: 110vh; left: var(--el); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -98,10 +87,10 @@
     <div id="name-modal" class="modal" style="display: flex;">
         <div class="modal-content">
             <h2 style="color:#00f2fe">DÂU VÀ RY</h2>
-            <p>Nhập tên để lưu điểm cao:</p>
+            <p>Nhập tên để so tài:</p>
             <input type="text" id="player-name" placeholder="Tên của bạn..." maxlength="15">
             <br><br>
-            <button class="btn-chill" onclick="startGame()" style="background:#00f2fe; color:black; font-weight:bold; width:100%">BẮT ĐẦU CHƠI</button>
+            <button class="btn-chill" onclick="startGame()" style="background:#00f2fe; color:black; font-weight:bold; width:100%">BẮT ĐẦU</button>
         </div>
     </div>
 
@@ -131,7 +120,7 @@
     <div id="butterfly-container"></div>
 
     <div class="controls-wrapper">
-        <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm: Bật/Tắt</button>
+        <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm</button>
         <button class="btn-chill" onclick="toggleMusic()">🎵 Nhạc</button>
         <button class="btn-chill" onclick="showLeaderboard()">🏆 Bảng Điểm</button>
         <button class="btn-chill" onclick="initLevel()">Chơi Lại</button>
@@ -148,14 +137,9 @@
             { cols: 6, rows: 12, time: 350, bonus: 5000 }
         ];
 
-        let playerName = "Người chơi";
-        let score = 0;
-        let currentLevelIdx = 0;
-        let timeLeft = 0;
-        let timerInterval;
-        let shuffleCount = 3;
-        let isButterflyActive = true;
-        const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
+        let playerName = "Vô danh"; let score = 0; let currentLevelIdx = 0;
+        let timeLeft = 0; let timerInterval; let shuffleCount = 3;
+        let isButterflyActive = true; const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
         let board = []; let selectedTiles = []; let matchedCount = 0;
 
         function startGame() {
@@ -164,39 +148,7 @@
             document.getElementById('display-name').innerText = playerName.toUpperCase();
             document.getElementById('name-modal').style.display = 'none';
             initLevel();
-            // Bắt đầu cho bướm bay ngay khi vào game
             setInterval(createButterfly, 4000);
-        }
-
-        // HÀM TẠO BƯỚM (ĐÃ SỬA LỖI)
-        function createButterfly() {
-            if (!isButterflyActive) return;
-            const container = document.getElementById('butterfly-container');
-            if (!container) return;
-
-            const b = document.createElement('div');
-            b.className = 'butterfly';
-            
-            // Dùng ảnh nếu có, không thì dùng emoji 🦋 tạm thời
-            const img = document.createElement('img');
-            img.src = 'butterfly.gif';
-            img.style.width = '100%';
-            img.onerror = () => {
-                b.innerText = '🦋'; // Nếu không thấy file gif thì hiện emoji
-                b.style.fontSize = '20px';
-            };
-            b.appendChild(img);
-
-            b.style.setProperty('--t', Math.random() * 80 + 10 + 'vh');
-            b.style.setProperty('--et', Math.random() * 80 + 10 + 'vh');
-            b.style.setProperty('--l', Math.random() * 80 + 10 + 'vw');
-            b.style.setProperty('--el', Math.random() * 80 + 10 + 'vw');
-            
-            const isHorizontal = Math.random() > 0.5;
-            b.style.animation = (isHorizontal ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+8) + 's linear forwards';
-            
-            container.appendChild(b);
-            setTimeout(() => b.remove(), 14000);
         }
 
         function initLevel() {
@@ -204,9 +156,7 @@
             const level = levels[currentLevelIdx];
             document.getElementById('lv-num').innerText = currentLevelIdx + 1;
             document.getElementById('score-num').innerText = score;
-            timeLeft = level.time;
-            updateTimerBar();
-            startTimer();
+            timeLeft = level.time; updateTimerBar(); startTimer();
             shuffleCount = 3; updateShuffleButton();
             document.documentElement.style.setProperty('--cols', level.cols);
             document.documentElement.style.setProperty('--rows', level.rows);
@@ -238,17 +188,15 @@
         function startTimer() {
             timerInterval = setInterval(() => {
                 timeLeft--; updateTimerBar();
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    alert("Hết thời gian! Chơi lại màn này nhé.");
-                    initLevel();
-                }
+                if (timeLeft <= 0) { clearInterval(timerInterval); alert("HẾT GIỜ!"); initLevel(); }
             }, 1000);
         }
 
         function updateTimerBar() {
             const bar = document.getElementById('timer-bar');
-            bar.style.width = (timeLeft / levels[currentLevelIdx].time) * 100 + "%";
+            const percent = (timeLeft / levels[currentLevelIdx].time) * 100;
+            bar.style.width = Math.max(0, percent) + "%";
+            bar.style.background = percent < 25 ? "#ff4b2b" : "#00f2fe";
         }
 
         function handleTileClick(r, c) {
@@ -259,10 +207,13 @@
             }
             tile.classList.add('selected');
             selectedTiles.push({ r, c, idx: board[r][c] });
+
             if (selectedTiles.length === 2) {
                 const t1 = selectedTiles[0], t2 = selectedTiles[1];
                 const level = levels[currentLevelIdx];
+                
                 if (t1.idx === t2.idx && checkConnect(t1, t2, level.rows, level.cols)) {
+                    // CHỌN ĐÚNG
                     setTimeout(() => {
                         document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
@@ -272,15 +223,26 @@
                         else checkBoardStatus();
                     }, 200);
                 } else {
+                    // CHỌN SAI - PHẠT TẠI ĐÂY
+                    const el1 = document.getElementById(`tile-${t1.r}-${t1.c}`);
+                    const el2 = document.getElementById(`tile-${t2.r}-${t2.c}`);
+                    el1.classList.add('wrong'); el2.classList.add('wrong');
+                    
+                    score = Math.max(0, score - 50); // Trừ 50 điểm
+                    timeLeft = Math.max(0, timeLeft - 3); // Trừ 3 giây
+                    document.getElementById('score-num').innerText = score;
+                    updateTimerBar();
+
                     setTimeout(() => {
-                        document.getElementById(`tile-${t1.r}-${t1.c}`).classList.remove('selected');
-                        document.getElementById(`tile-${t2.r}-${t2.c}`).classList.remove('selected');
+                        el1.classList.remove('selected', 'wrong');
+                        el2.classList.remove('selected', 'wrong');
                     }, 400);
                 }
                 selectedTiles = [];
             }
         }
 
+        // --- CÁC HÀM LOGIC CÒN LẠI GIỮ NGUYÊN ---
         function nextLevel() {
             clearInterval(timerInterval);
             const timeBonus = timeLeft * 50;
@@ -311,22 +273,18 @@
         function manualShuffle(isAuto = false) {
             if (!isAuto && shuffleCount <= 0) return;
             const level = levels[currentLevelIdx];
-            let currentImages = [];
-            for (let r = 0; r < level.rows; r++) {
-                for (let c = 0; c < level.cols; c++) {
-                    if (board[r][c] !== -1) currentImages.push(board[r][c]);
-                }
-            }
-            currentImages.sort(() => Math.random() - 0.5);
+            let imgs = [];
+            for (let r = 0; r < level.rows; r++) 
+                for (let c = 0; c < level.cols; c++) 
+                    if (board[r][c] !== -1) imgs.push(board[r][c]);
+            imgs.sort(() => Math.random() - 0.5);
             let idx = 0;
-            for (let r = 0; r < level.rows; r++) {
-                for (let c = 0; c < level.cols; c++) {
+            for (let r = 0; r < level.rows; r++) 
+                for (let c = 0; c < level.cols; c++) 
                     if (board[r][c] !== -1) {
-                        board[r][c] = currentImages[idx++];
+                        board[r][c] = imgs[idx++];
                         document.getElementById(`tile-${r}-${c}`).style.backgroundImage = `url('${childImages[board[r][c]]}')`;
                     }
-                }
-            }
             shuffleCount--; updateShuffleButton(); checkBoardStatus();
         }
 
@@ -338,15 +296,13 @@
 
         function checkBoardStatus() {
             const level = levels[currentLevelIdx];
-            let hasMove = false; let activeTiles = [];
-            for (let r = 0; r < level.rows; r++) {
-                for (let c = 0; c < level.cols; c++) {
-                    if (board[r][c] !== -1) activeTiles.push({ r, c, idx: board[r][c] });
-                }
-            }
-            for (let i = 0; i < activeTiles.length; i++) {
-                for (let j = i + 1; j < activeTiles.length; j++) {
-                    if (activeTiles[i].idx === activeTiles[j].idx && checkConnect(activeTiles[i], activeTiles[j], level.rows, level.cols)) {
+            let hasMove = false; let active = [];
+            for (let r = 0; r < level.rows; r++)
+                for (let c = 0; c < level.cols; c++)
+                    if (board[r][c] !== -1) active.push({ r, c, idx: board[r][c] });
+            for (let i = 0; i < active.length; i++) {
+                for (let j = i + 1; j < active.length; j++) {
+                    if (active[i].idx === active[j].idx && checkConnect(active[i], active[j], level.rows, level.cols)) {
                         hasMove = true; break;
                     }
                 }
@@ -358,20 +314,35 @@
         }
 
         function saveScore() {
-            let history = JSON.parse(localStorage.getItem('pikachuScores')) || [];
-            history.push({ name: playerName, score: score });
-            history.sort((a, b) => b.score - a.score);
-            localStorage.setItem('pikachuScores', JSON.stringify(history.slice(0, 10)));
+            let h = JSON.parse(localStorage.getItem('pikaScores')) || [];
+            h.push({ name: playerName, score: score });
+            h.sort((a, b) => b.score - a.score);
+            localStorage.setItem('pikaScores', JSON.stringify(h.slice(0, 10)));
         }
 
         function showLeaderboard() {
             const list = document.getElementById('leaderboard-list');
-            let history = JSON.parse(localStorage.getItem('pikachuScores')) || [];
-            list.innerHTML = history.length ? '' : '<p>Chưa có kỷ lục.</p>';
-            history.forEach((item, index) => {
+            let h = JSON.parse(localStorage.getItem('pikaScores')) || [];
+            list.innerHTML = h.length ? '' : '<p>Trống.</p>';
+            h.forEach((item, index) => {
                 list.innerHTML += `<div class="score-item"><span>${index+1}. ${item.name}</span> <span>${item.score}</span></div>`;
             });
             document.getElementById('score-modal').style.display = 'flex';
+        }
+
+        function createButterfly() {
+            if (!isButterflyActive) return;
+            const b = document.createElement('div'); b.className = 'butterfly';
+            const img = document.createElement('img'); img.src = 'butterfly.gif'; img.style.width = '100%';
+            img.onerror = () => { b.innerText = '🦋'; b.style.fontSize = '20px'; };
+            b.appendChild(img);
+            b.style.setProperty('--t', Math.random() * 80 + 10 + 'vh');
+            b.style.setProperty('--et', Math.random() * 80 + 10 + 'vh');
+            b.style.setProperty('--l', Math.random() * 80 + 10 + 'vw');
+            b.style.setProperty('--el', Math.random() * 80 + 10 + 'vw');
+            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+8) + 's linear forwards';
+            document.getElementById('butterfly-container').appendChild(b);
+            setTimeout(() => b.remove(), 14000);
         }
 
         function closeScores() { document.getElementById('score-modal').style.display = 'none'; }

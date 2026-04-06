@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yến Lộc - Thử Thách 5 Màn</title>
+    <title>Yến Lộc - 5 Màn Thử Thách</title>
     <style>
         :root { --tile-w: 14vw; --tile-h: 7.5vh; --cols: 4; --rows: 5; }
         @media (min-width: 600px) { :root { --tile-w: 60px; --tile-h: 75px; } }
@@ -59,10 +59,28 @@
         }
         .btn-shuffle { background: rgba(0, 242, 254, 0.3); border-color: #00f2fe; }
 
-        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .butterfly { position: absolute; width: 32px; height: 32px; }
-        @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 100% { left: 110%; top: var(--et); opacity: 0; } }
-        @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
+        /* PHẦN CẤU HÌNH BƯỚM NHỎ */
+        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
+        .butterfly { 
+            position: absolute; 
+            width: 22px; /* Bướm nhỏ lại */
+            height: 22px; 
+            opacity: 0.8; /* Hơi mờ cho ảo diệu */
+            pointer-events: none;
+        }
+        
+        @keyframes fly-right { 
+            0% { left: -10%; top: var(--t); transform: rotate(0deg); opacity: 0; } 
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { left: 110%; top: var(--et); transform: rotate(20deg); opacity: 0; } 
+        }
+        @keyframes fly-up { 
+            0% { bottom: -10%; left: var(--l); transform: rotate(-10deg); opacity: 0; } 
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { bottom: 110%; left: var(--el); transform: rotate(10deg); opacity: 0; } 
+        }
     </style>
 </head>
 <body>
@@ -71,7 +89,7 @@
 
     <div id="game-container">
         <div class="game-header">
-            <h1>DÂU VÀ RY </h1>
+            <h1>DÂU VÀ RY</h1>
             <div id="level-info">MÀN 1</div>
         </div>
         <div id="game-board"></div>
@@ -111,7 +129,7 @@
             const gameBoard = document.getElementById('game-board');
             document.getElementById('level-info').innerText = level.name;
             
-            shuffleCount = 3; // Reset lượt đổi mỗi khi sang màn mới
+            shuffleCount = 3; 
             updateShuffleButton();
 
             document.documentElement.style.setProperty('--cols', level.cols);
@@ -210,7 +228,7 @@
                     alert("Hết nước đi! Hệ thống tự động đảo bài.");
                     manualShuffle(true);
                 } else {
-                    alert("Hết lượt đổi vị trí và không còn nước đi! Bạn phải chơi lại màn này.");
+                    alert("Hết lượt đổi vị trí! Bạn phải chơi lại màn này.");
                     initLevel();
                 }
             }
@@ -218,7 +236,6 @@
 
         function manualShuffle(isAuto = false) {
             if (!isAuto && shuffleCount <= 0) return;
-            
             const level = levels[currentLevelIdx];
             let currentImages = [];
             for (let r = 0; r < level.rows; r++) {
@@ -227,7 +244,6 @@
                 }
             }
             currentImages.sort(() => Math.random() - 0.5);
-
             let idx = 0;
             for (let r = 0; r < level.rows; r++) {
                 for (let c = 0; c < level.cols; c++) {
@@ -274,29 +290,36 @@
                 currentLevelIdx++;
                 initLevel();
             } else {
-                alert("Vỡ òa! Bạn đã vượt qua thử thách 5 màn của Yên Lộc!");
+                alert("Vỡ òa! Bạn đã vượt qua tất cả các màn!");
                 currentLevelIdx = 0;
                 initLevel();
             }
         }
 
+        // HÀM TẠO BƯỚM NHỎ
         function createButterfly() {
             if (!isButterflyActive) return;
             const container = document.getElementById('butterfly-container');
             const b = document.createElement('img');
-            b.src = 'butterfly.gif'; b.className = 'butterfly';
-            b.style.setProperty('--t', Math.random() * 90 + '%');
-            b.style.setProperty('--et', Math.random() * 90 + '%');
-            b.style.setProperty('--l', Math.random() * 90 + '%');
-            b.style.setProperty('--el', Math.random() * 90 + '%');
-            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*6+8) + 's linear forwards';
+            // ĐẢM BẢO FILE NÀY TỒN TẠI TRÊN GITHUB CỦA BẠN
+            b.src = 'butterfly.gif'; 
+            b.className = 'butterfly';
+            b.style.setProperty('--t', Math.random() * 80 + 10 + '%');
+            b.style.setProperty('--et', Math.random() * 80 + 10 + '%');
+            b.style.setProperty('--l', Math.random() * 80 + 10 + '%');
+            b.style.setProperty('--el', Math.random() * 80 + 10 + '%');
+            
+            // Bay chậm và mượt hơn (10s - 15s)
+            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+10) + 's linear forwards';
+            
             container.appendChild(b);
-            setTimeout(() => b.remove(), 14000);
+            setTimeout(() => b.remove(), 15500);
         }
 
         function toggleButterflies() {
             isButterflyActive = !isButterflyActive;
-            if (!isButterflyActive) document.getElementById('butterfly-container').innerHTML = '';
+            const container = document.getElementById('butterfly-container');
+            if (!isButterflyActive) container.innerHTML = '';
         }
 
         function toggleMusic() {
@@ -304,7 +327,11 @@
             m.paused ? m.play() : m.pause();
         }
 
-        window.onload = () => { initLevel(); setInterval(createButterfly, 4500); };
+        window.onload = () => { 
+            initLevel(); 
+            // Cứ 5 giây tạo 1 con bướm mới
+            setInterval(createButterfly, 5000); 
+        };
     </script>
 </body>
 </html>

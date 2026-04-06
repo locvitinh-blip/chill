@@ -3,83 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yên Lộc - Mobile Thơ Mộng</title>
+    <title>Yên Lộc - 15 Ảnh Vừa Khung</title>
     <style>
-        /* Cấu hình kích thước ô gạch */
         :root {
-            --tile-w: 65px;
-            --tile-h: 75px;
+            /* Kích thước mặc định cho Máy tính */
+            --tile-w: 60px;
+            --tile-h: 70px;
             --cols: 10;
             --rows: 8;
         }
 
-        /* Responsive cho điện thoại (Rất quan trọng) */
+        /* Tối ưu cực hạn cho Điện thoại */
         @media (max-width: 600px) {
             :root {
-                --tile-w: 18vw; /* Tự co giãn theo chiều rộng màn hình */
-                --tile-h: 11vh; /* Tự co giãn theo chiều cao màn hình */
-                --cols: 5;
-                --rows: 16;
+                --tile-w: 15vw; /* Nhỏ lại để vừa chiều rộng */
+                --tile-h: 8.5vh; /* Ngắn lại để vừa chiều cao */
+                --cols: 6;      /* 6 cột */
+                --rows: 10;     /* 10 hàng => Tổng 60 ô (vừa khít 15 ảnh x 4) */
             }
             h1 { font-size: 1.2rem !important; margin: 2px 0 !important; }
-            p { font-size: 0.7rem; margin: 0 !important; }
-            .btn-chill { padding: 8px 15px !important; font-size: 0.75rem !important; }
+            p { font-size: 0.7rem !important; margin-bottom: 5px !important; }
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000 url('background.jpg') no-repeat center center fixed;
-            background-size: cover;
-            font-family: 'Segoe UI', sans-serif;
-            touch-action: none; /* Ngăn chặn các thao tác vuốt mặc định của trình duyệt */
+            background-size: cover; font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
         }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); z-index: 1; }
         
         #game-container {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 5; display: flex; flex-direction: column; align-items: center;
-            width: 100%; max-width: 100vw;
+            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 5; display: flex; flex-direction: column; align-items: center; width: 100%;
         }
 
         #game-board {
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 2px; padding: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            gap: 3px; padding: 6px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
         }
 
         .tile {
             width: var(--tile-w); height: var(--tile-h);
             background-size: cover; background-position: center;
             border-radius: 4px; cursor: pointer;
-            transition: 0.1s; border: 1px solid transparent;
+            transition: transform 0.1s; border: 1px solid transparent;
         }
-        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 10px #00f2fe; z-index: 2; }
+        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 10px #00f2fe; z-index: 2; transform: scale(1.05); }
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        .game-header { color: white; text-align: center; margin-bottom: 5px; }
-        
+        .game-header { color: white; text-align: center; text-shadow: 1px 1px 4px #000; }
         .btn-chill {
-            padding: 10px 20px; background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px; background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
-            color: white; cursor: pointer; backdrop-filter: blur(5px);
+            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.8rem;
         }
 
-        /* Hệ thống bướm */
         #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .butterfly { position: absolute; width: 40px; height: 40px; opacity: 0; }
+        .butterfly { position: absolute; width: 35px; height: 35px; }
         
         @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 110%; top: var(--et); opacity: 0; } }
         @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
         
         .controls-wrapper {
-            position: fixed; bottom: 15px; right: 10px; z-index: 100;
+            position: fixed; bottom: 12px; right: 10px; z-index: 100;
             display: flex; gap: 8px;
         }
     </style>
@@ -91,7 +86,7 @@
     <div id="game-container">
         <div class="game-header">
             <h1>YÊN LỘC</h1>
-            <p>Nối nụ cười của con</p>
+            <p>15 khoảnh khắc yêu thương</p>
         </div>
         <div id="game-board"></div>
         <button class="btn-chill" style="margin-top:10px" onclick="resetGame()">Ván Mới</button>
@@ -108,19 +103,18 @@
 
     <script>
         const isMobile = window.innerWidth <= 600;
-        const ROWS = isMobile ? 16 : 8; 
-        const COLS = isMobile ? 5 : 10; 
+        const ROWS = isMobile ? 10 : 8; 
+        const COLS = isMobile ? 6 : 10; 
 
         const childImages = [
-            'images/con1.jpg', 'images/con2.jpg', 'images/con3.jpg', 'images/con4.jpg',
-            'images/con5.jpg', 'images/con6.jpg', 'images/con7.jpg', 'images/con8.jpg',
-            'images/con9.jpg', 'images/con10.jpg'
+            'images/con1.jpg', 'images/con2.jpg', 'images/con3.jpg', 'images/con4.jpg', 'images/con5.jpg',
+            'images/con6.jpg', 'images/con7.jpg', 'images/con8.jpg', 'images/con9.jpg', 'images/con10.jpg',
+            'images/con11.jpg', 'images/con12.jpg', 'images/con13.jpg', 'images/con14.jpg', 'images/con15.jpg'
         ];
 
         let board = []; 
         let selectedTiles = [];
         let matchedCount = 0;
-        let butterflyInterval = null;
         let isButterflyActive = true;
 
         function initGame() {
@@ -131,7 +125,9 @@
             matchedCount = 0;
 
             let tileList = [];
-            for (let i = 0; i < (ROWS * COLS) / 2; i++) {
+            const totalPairs = (ROWS * COLS) / 2;
+
+            for (let i = 0; i < totalPairs; i++) {
                 let imgIdx = i % childImages.length;
                 tileList.push(imgIdx, imgIdx);
             }
@@ -161,12 +157,10 @@
             const tile = document.getElementById(`tile-${r}-${c}`);
             if (selectedTiles.length === 1 && selectedTiles[0].r === r && selectedTiles[0].c === c) {
                 tile.classList.remove('selected');
-                selectedTiles = [];
-                return;
+                selectedTiles = []; return;
             }
             tile.classList.add('selected');
             selectedTiles.push({ r, c, idx: board[r][c] });
-
             if (selectedTiles.length === 2) {
                 const t1 = selectedTiles[0], t2 = selectedTiles[1];
                 if (t1.idx === t2.idx && checkConnect(t1, t2)) {
@@ -175,7 +169,7 @@
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
                         board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
                         matchedCount += 2;
-                        if (matchedCount === ROWS * COLS) alert("Tuyệt vời!");
+                        if (matchedCount === ROWS * COLS) alert("Hoàn thành ván chơi!");
                     }, 200);
                 } else {
                     setTimeout(() => {
@@ -189,23 +183,21 @@
 
         function checkConnect(p1, p2) {
             const isEmpty = (r, c) => (r >= -1 && r <= ROWS && c >= -1 && c <= COLS && board[r][c] === -1);
-            const checkL = (v1, v2, f, isR) => {
+            const checkLine = (v1, v2, f, isR) => {
                 for (let i = Math.min(v1, v2) + 1; i < Math.max(v1, v2); i++)
                     if (isR ? !isEmpty(f, i) : !isEmpty(i, f)) return false;
                 return true;
             };
-            if (p1.r === p2.r && checkL(p1.c, p2.c, p1.r, true)) return true;
-            if (p1.c === p2.c && checkL(p1.r, p2.r, p1.c, false)) return true;
-            if (isEmpty(p1.r, p2.c) && checkL(p1.c, p2.c, p1.r, true) && checkL(p1.r, p2.r, p2.c, false)) return true;
-            if (isEmpty(p2.r, p1.c) && checkL(p1.r, p2.r, p1.c, false) && checkL(p1.c, p2.c, p2.r, true)) return true;
+            if (p1.r === p2.r && checkLine(p1.c, p2.c, p1.r, true)) return true;
+            if (p1.c === p2.c && checkLine(p1.r, p2.r, p1.c, false)) return true;
+            if (isEmpty(p1.r, p2.c) && checkLine(p1.c, p2.c, p1.r, true) && checkLine(p1.r, p2.r, p2.c, false)) return true;
+            if (isEmpty(p2.r, p1.c) && checkLine(p1.r, p2.r, p1.c, false) && checkLine(p1.c, p2.c, p2.r, true)) return true;
             for (let r = -1; r <= ROWS; r++)
-                if (isEmpty(r, p1.c) && checkL(p1.r, r, p1.c, false) && isEmpty(r, p2.c) && checkL(p1.c, p2.c, r, true) && checkL(r, p2.r, p2.c, false)) return true;
+                if (isEmpty(r, p1.c) && checkLine(p1.r, r, p1.c, false) && isEmpty(r, p2.c) && checkLine(p1.c, p2.c, r, true) && checkLine(r, p2.r, p2.c, false)) return true;
             for (let c = -1; c <= COLS; c++)
-                if (isEmpty(p1.r, c) && checkL(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkL(p1.r, p2.r, c, false) && checkL(c, p2.c, p2.r, true)) return true;
+                if (isEmpty(p1.r, c) && checkLine(p1.c, c, p1.r, true) && isEmpty(p2.r, c) && checkLine(p1.r, p2.r, c, false) && checkLine(c, p2.c, p2.r, true)) return true;
             return false;
         }
-
-        function resetGame() { initGame(); }
 
         function createButterfly() {
             if (!isButterflyActive) return;
@@ -216,22 +208,17 @@
             b.style.setProperty('--et', Math.random() * 90 + '%');
             b.style.setProperty('--l', Math.random() * 90 + '%');
             b.style.setProperty('--el', Math.random() * 90 + '%');
-            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+10) + 's linear forwards';
+            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*6+10) + 's linear forwards';
             container.appendChild(b);
-            setTimeout(() => b.remove(), 15000);
+            setTimeout(() => b.remove(), 16000);
         }
 
         function toggleButterflies() {
             const txt = document.getElementById('btf-text');
             const container = document.getElementById('butterfly-container');
-            if (isButterflyActive) {
-                isButterflyActive = false;
-                container.innerHTML = ''; // Xóa sạch bướm đang bay
-                txt.innerText = "Bật Bướm";
-            } else {
-                isButterflyActive = true;
-                txt.innerText = "Tắt Bướm";
-            }
+            isButterflyActive = !isButterflyActive;
+            if (!isButterflyActive) { container.innerHTML = ''; txt.innerText = "Bật Bướm"; }
+            else { txt.innerText = "Tắt Bướm"; }
         }
 
         function toggleMusic() {
@@ -239,10 +226,8 @@
             m.paused ? m.play() : m.pause();
         }
 
-        window.onload = function() {
-            initGame();
-            setInterval(createButterfly, 3000);
-        };
+        function resetGame() { initGame(); }
+        window.onload = () => { initGame(); setInterval(createButterfly, 4000); };
     </script>
 </body>
 </html>

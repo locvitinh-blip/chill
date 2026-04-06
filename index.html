@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yến Lộc - Chơi game cùng con</title>
+    <title>Yến Lộc - Chơi cùng các con</title>
     <style>
         :root { --tile-w: 14vw; --tile-h: 7.5vh; --cols: 4; --rows: 5; }
         @media (min-width: 600px) { :root { --tile-w: 60px; --tile-h: 75px; } }
@@ -11,91 +11,119 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000 url('background.jpg') no-repeat center center fixed;
-            background-size: cover; font-family: 'Segoe UI', sans-serif;
-            touch-action: none;
+            background-size: cover; font-family: 'Segoe UI', sans-serif; touch-action: none;
         }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); z-index: 1; }
         
         #game-container {
-            position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
             z-index: 5; display: flex; flex-direction: column; align-items: center; width: 100%;
         }
 
+        .timer-container {
+            width: 80%; height: 10px; background: rgba(255,255,255,0.2);
+            border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.3);
+        }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 1s linear; }
+
         #game-board {
-            display: grid;
-            grid-template-columns: repeat(var(--cols), var(--tile-w));
+            display: grid; grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 3px; padding: 5px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            gap: 3px; padding: 5px; background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px;
         }
 
         .tile {
             width: var(--tile-w); height: var(--tile-h);
             background-size: cover; background-position: center;
-            border-radius: 4px; cursor: pointer;
-            transition: 0.1s; border: 1.5px solid transparent;
+            border-radius: 4px; cursor: pointer; transition: 0.1s; border: 1.5px solid transparent;
         }
         .tile.selected { border-color: #00f2fe; box-shadow: 0 0 10px #00f2fe; transform: scale(1.05); z-index: 2; }
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        .game-header { color: white; text-align: center; text-shadow: 2px 2px 5px #000; margin-bottom: 5px; }
-        h1 { font-size: 1.3rem; margin: 0; letter-spacing: 1px; }
-        #level-info { font-size: 0.85rem; color: #00f2fe; font-weight: bold; }
+        .game-header { color: white; text-align: center; text-shadow: 2px 2px 5px #000; }
+        .stats-bar { display: flex; gap: 15px; color: #fff; font-weight: bold; font-size: 0.85rem; justify-content: center; }
 
         .controls-wrapper {
-            position: fixed; bottom: 20px; left: 0; right: 0;
-            z-index: 100; display: flex; justify-content: center; gap: 10px;
+            position: fixed; bottom: 15px; left: 0; right: 0;
+            z-index: 100; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
         }
 
         .btn-chill {
-            padding: 8px 15px; background: rgba(255, 255, 255, 0.2);
+            padding: 7px 12px; background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
-            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.75rem;
+            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.7rem;
         }
 
-        /* HIỆU ỨNG CHIẾN THẮNG */
-        #win-screen {
+        .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); z-index: 200;
+            background: rgba(0,0,0,0.9); z-index: 2000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
-            color: white; text-align: center; backdrop-filter: blur(15px);
+            color: white; backdrop-filter: blur(10px);
         }
-        #win-screen h2 { font-size: 2rem; color: #fdfc47; margin: 0; text-shadow: 0 0 20px #fdfc47; }
-        
-        .confetti {
-            position: absolute; width: 8px; height: 8px; background: #fff;
-            opacity: 0.8; animation: fall 3s linear infinite;
+        .modal-content {
+            background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;
+            width: 85%; max-width: 320px; text-align: center; border: 1px solid #00f2fe;
         }
-        @keyframes fall {
-            to { transform: translateY(100vh) rotate(360deg); }
+        input { padding: 10px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; text-align: center; }
+
+        /* PHẦN SỬA LỖI BƯỚM */
+        #butterfly-container { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; z-index: 9999; /* Đưa lên trên cùng */
+            overflow: hidden;
+        }
+        .butterfly { 
+            position: absolute; width: 25px; height: 25px; 
+            z-index: 9999; pointer-events: none;
         }
 
-        /* BƯỚM NHỎ */
-        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
-        .butterfly { position: absolute; width: 20px; height: 20px; opacity: 0.7; pointer-events: none; }
-        @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 100% { left: 110%; top: var(--et); opacity: 0; } }
-        @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
+        @keyframes fly-right { 
+            0% { left: -50px; top: var(--t); opacity: 0; transform: scale(0.5); } 
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { left: 110vw; top: var(--et); opacity: 0; transform: scale(1.2); } 
+        }
+        @keyframes fly-up { 
+            0% { bottom: -50px; left: var(--l); opacity: 0; transform: scale(0.5); } 
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { bottom: 110vh; left: var(--el); opacity: 0; transform: scale(1.2); } 
+        }
     </style>
 </head>
 <body>
 
-    <div id="win-screen">
-        <h2>🎉 CHÚC MỪNG 🎉</h2>
-        <p style="font-size: 1.1rem; margin: 15px 0;">Bạn đã xuất sắc chinh phục<br>tất cả các màn chơi của Yên Lộc!</p>
-        <button class="btn-chill" onclick="restartFromZero()" style="background:#00f2fe; color:black; font-weight:bold; padding: 12px 25px;">Chơi Lại Từ Đầu</button>
+    <div id="name-modal" class="modal" style="display: flex;">
+        <div class="modal-content">
+            <h2 style="color:#00f2fe">DÂU VÀ RY</h2>
+            <p>Nhập tên để lưu điểm cao:</p>
+            <input type="text" id="player-name" placeholder="Tên của bạn..." maxlength="15">
+            <br><br>
+            <button class="btn-chill" onclick="startGame()" style="background:#00f2fe; color:black; font-weight:bold; width:100%">BẮT ĐẦU CHƠI</button>
+        </div>
+    </div>
+
+    <div id="score-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0">🏆 BẢNG VÀNG 🏆</h3>
+            <div id="leaderboard-list"></div>
+            <button class="btn-chill" onclick="closeScores()" style="width:100%">ĐÓNG</button>
+        </div>
     </div>
 
     <div class="overlay"></div>
 
     <div id="game-container">
         <div class="game-header">
-            <h1>DÂU VÀ RY</h1>
-            <div id="level-info">MÀN 1</div>
+            <h1 id="display-name">YÊN LỘC</h1>
+            <div class="stats-bar">
+                <span>MÀN: <span id="lv-num">1</span></span>
+                <span>ĐIỂM: <span id="score-num">0</span></span>
+            </div>
         </div>
+        <div class="timer-container"><div id="timer-bar"></div></div>
         <div id="game-board"></div>
         <button id="btn-shuffle" class="btn-chill" style="margin-top:10px; border: 1px solid #00f2fe;" onclick="manualShuffle()">Đổi Vị Trí (3)</button>
     </div>
@@ -103,38 +131,85 @@
     <div id="butterfly-container"></div>
 
     <div class="controls-wrapper">
-        <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm</button>
+        <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm: Bật/Tắt</button>
         <button class="btn-chill" onclick="toggleMusic()">🎵 Nhạc</button>
-        <button class="btn-chill" onclick="initLevel()">Làm Mới</button>
+        <button class="btn-chill" onclick="showLeaderboard()">🏆 Bảng Điểm</button>
+        <button class="btn-chill" onclick="initLevel()">Chơi Lại</button>
     </div>
 
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
 
     <script>
         const levels = [
-            { name: "MÀN 1: KHỞI ĐẦU", cols: 4, rows: 4, tileW: "18vw", tileH: "10vh" },
-            { name: "MÀN 2: DỄ THƯƠNG", cols: 4, rows: 6, tileW: "17vw", tileH: "9vh" },
-            { name: "MÀN 3: GẮN KẾT", cols: 6, rows: 6, tileW: "14vw", tileH: "8vh" },
-            { name: "MÀN 4: YÊU THƯƠNG", cols: 6, rows: 9, tileW: "13vw", tileH: "7vh" },
-            { name: "MÀN 5: CỰC KHÓ", cols: 6, rows: 12, tileW: "11.5vw", tileH: "6.2vh" }
+            { cols: 4, rows: 4, time: 60,  bonus: 500 },
+            { cols: 4, rows: 6, time: 100, bonus: 1000 },
+            { cols: 6, rows: 6, time: 150, bonus: 1500 },
+            { cols: 6, rows: 9, time: 250, bonus: 2000 },
+            { cols: 6, rows: 12, time: 350, bonus: 5000 }
         ];
 
+        let playerName = "Người chơi";
+        let score = 0;
         let currentLevelIdx = 0;
+        let timeLeft = 0;
+        let timerInterval;
         let shuffleCount = 3;
+        let isButterflyActive = true;
         const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
-        let board = []; let selectedTiles = []; let matchedCount = 0; let isButterflyActive = true;
+        let board = []; let selectedTiles = []; let matchedCount = 0;
+
+        function startGame() {
+            const inputName = document.getElementById('player-name').value.trim();
+            if (inputName) playerName = inputName;
+            document.getElementById('display-name').innerText = playerName.toUpperCase();
+            document.getElementById('name-modal').style.display = 'none';
+            initLevel();
+            // Bắt đầu cho bướm bay ngay khi vào game
+            setInterval(createButterfly, 4000);
+        }
+
+        // HÀM TẠO BƯỚM (ĐÃ SỬA LỖI)
+        function createButterfly() {
+            if (!isButterflyActive) return;
+            const container = document.getElementById('butterfly-container');
+            if (!container) return;
+
+            const b = document.createElement('div');
+            b.className = 'butterfly';
+            
+            // Dùng ảnh nếu có, không thì dùng emoji 🦋 tạm thời
+            const img = document.createElement('img');
+            img.src = 'butterfly.gif';
+            img.style.width = '100%';
+            img.onerror = () => {
+                b.innerText = '🦋'; // Nếu không thấy file gif thì hiện emoji
+                b.style.fontSize = '20px';
+            };
+            b.appendChild(img);
+
+            b.style.setProperty('--t', Math.random() * 80 + 10 + 'vh');
+            b.style.setProperty('--et', Math.random() * 80 + 10 + 'vh');
+            b.style.setProperty('--l', Math.random() * 80 + 10 + 'vw');
+            b.style.setProperty('--el', Math.random() * 80 + 10 + 'vw');
+            
+            const isHorizontal = Math.random() > 0.5;
+            b.style.animation = (isHorizontal ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+8) + 's linear forwards';
+            
+            container.appendChild(b);
+            setTimeout(() => b.remove(), 14000);
+        }
 
         function initLevel() {
-            document.getElementById('win-screen').style.display = 'none';
+            clearInterval(timerInterval);
             const level = levels[currentLevelIdx];
-            document.getElementById('level-info').innerText = level.name;
+            document.getElementById('lv-num').innerText = currentLevelIdx + 1;
+            document.getElementById('score-num').innerText = score;
+            timeLeft = level.time;
+            updateTimerBar();
+            startTimer();
             shuffleCount = 3; updateShuffleButton();
             document.documentElement.style.setProperty('--cols', level.cols);
             document.documentElement.style.setProperty('--rows', level.rows);
-            if(window.innerWidth <= 600) {
-                document.documentElement.style.setProperty('--tile-w', level.tileW);
-                document.documentElement.style.setProperty('--tile-h', level.tileH);
-            }
             const gameBoard = document.getElementById('game-board');
             gameBoard.innerHTML = ''; board = []; selectedTiles = []; matchedCount = 0;
             let tileList = [];
@@ -160,6 +235,22 @@
             checkBoardStatus();
         }
 
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--; updateTimerBar();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Hết thời gian! Chơi lại màn này nhé.");
+                    initLevel();
+                }
+            }, 1000);
+        }
+
+        function updateTimerBar() {
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = (timeLeft / levels[currentLevelIdx].time) * 100 + "%";
+        }
+
         function handleTileClick(r, c) {
             if (board[r][c] === -1) return;
             const tile = document.getElementById(`tile-${r}-${c}`);
@@ -176,6 +267,7 @@
                         document.getElementById(`tile-${t1.r}-${t1.c}`).classList.add('matched');
                         document.getElementById(`tile-${t2.r}-${t2.c}`).classList.add('matched');
                         board[t1.r][t1.c] = board[t2.r][t2.c] = -1; matchedCount += 2;
+                        score += 100; document.getElementById('score-num').innerText = score;
                         if (matchedCount === level.rows * level.cols) nextLevel();
                         else checkBoardStatus();
                     }, 200);
@@ -190,87 +282,12 @@
         }
 
         function nextLevel() {
-            if (currentLevelIdx < levels.length - 1) {
-                currentLevelIdx++;
-                initLevel();
-            } else {
-                showWinEffect();
-            }
-        }
-
-        function showWinEffect() {
-            const winScreen = document.getElementById('win-screen');
-            winScreen.style.display = 'flex';
-            for (let i = 0; i < 100; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
-                confetti.style.animationDelay = Math.random() * 3 + 's';
-                winScreen.appendChild(confetti);
-            }
-        }
-
-        function restartFromZero() {
-            currentLevelIdx = 0;
-            const winScreen = document.getElementById('win-screen');
-            winScreen.style.display = 'none';
-            // Xóa pháo hoa cũ
-            const oldConfetti = winScreen.querySelectorAll('.confetti');
-            oldConfetti.forEach(c => c.remove());
-            initLevel();
-        }
-
-        function checkBoardStatus() {
-            const level = levels[currentLevelIdx];
-            let hasMove = false;
-            let activeTiles = [];
-            for (let r = 0; r < level.rows; r++) {
-                for (let c = 0; c < level.cols; c++) {
-                    if (board[r][c] !== -1) activeTiles.push({ r, c, idx: board[r][c] });
-                }
-            }
-            for (let i = 0; i < activeTiles.length; i++) {
-                for (let j = i + 1; j < activeTiles.length; j++) {
-                    if (activeTiles[i].idx === activeTiles[j].idx && checkConnect(activeTiles[i], activeTiles[j], level.rows, level.cols)) {
-                        hasMove = true; break;
-                    }
-                }
-                if (hasMove) break;
-            }
-            if (!hasMove && matchedCount < level.rows * level.cols) {
-                if (shuffleCount > 0) manualShuffle(true);
-                else initLevel();
-            }
-        }
-
-        function manualShuffle(isAuto = false) {
-            if (!isAuto && shuffleCount <= 0) return;
-            const level = levels[currentLevelIdx];
-            let currentImages = [];
-            for (let r = 0; r < level.rows; r++) {
-                for (let c = 0; c < level.cols; c++) {
-                    if (board[r][c] !== -1) currentImages.push(board[r][c]);
-                }
-            }
-            currentImages.sort(() => Math.random() - 0.5);
-            let idx = 0;
-            for (let r = 0; r < level.rows; r++) {
-                for (let c = 0; c < level.cols; c++) {
-                    if (board[r][c] !== -1) {
-                        board[r][c] = currentImages[idx++];
-                        const tile = document.getElementById(`tile-${r}-${c}`);
-                        tile.style.backgroundImage = `url('${childImages[board[r][c]]}')`;
-                    }
-                }
-            }
-            shuffleCount--; updateShuffleButton(); checkBoardStatus();
-        }
-
-        function updateShuffleButton() {
-            const btn = document.getElementById('btn-shuffle');
-            btn.innerText = `Đổi Vị Trí (${shuffleCount < 0 ? 0 : shuffleCount})`;
-            btn.style.opacity = shuffleCount <= 0 ? "0.5" : "1";
+            clearInterval(timerInterval);
+            const timeBonus = timeLeft * 50;
+            score += (levels[currentLevelIdx].bonus + timeBonus);
+            alert(`XONG MÀN!\nThưởng thời gian: +${timeBonus}`);
+            if (currentLevelIdx < levels.length - 1) { currentLevelIdx++; initLevel(); }
+            else { saveScore(); alert("CHIẾN THẮNG!"); showLeaderboard(); }
         }
 
         function checkConnect(p1, p2, maxR, maxC) {
@@ -291,30 +308,75 @@
             return false;
         }
 
-        function createButterfly() {
-            if (!isButterflyActive) return;
-            const b = document.createElement('img');
-            b.src = 'butterfly.gif'; b.className = 'butterfly';
-            b.style.setProperty('--t', Math.random() * 80 + 10 + '%');
-            b.style.setProperty('--et', Math.random() * 80 + 10 + '%');
-            b.style.setProperty('--l', Math.random() * 80 + 10 + '%');
-            b.style.setProperty('--el', Math.random() * 80 + 10 + '%');
-            b.style.animation = (Math.random() > 0.5 ? 'fly-right' : 'fly-up') + ' ' + (Math.random()*5+10) + 's linear forwards';
-            document.getElementById('butterfly-container').appendChild(b);
-            setTimeout(() => b.remove(), 15500);
+        function manualShuffle(isAuto = false) {
+            if (!isAuto && shuffleCount <= 0) return;
+            const level = levels[currentLevelIdx];
+            let currentImages = [];
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    if (board[r][c] !== -1) currentImages.push(board[r][c]);
+                }
+            }
+            currentImages.sort(() => Math.random() - 0.5);
+            let idx = 0;
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    if (board[r][c] !== -1) {
+                        board[r][c] = currentImages[idx++];
+                        document.getElementById(`tile-${r}-${c}`).style.backgroundImage = `url('${childImages[board[r][c]]}')`;
+                    }
+                }
+            }
+            shuffleCount--; updateShuffleButton(); checkBoardStatus();
         }
 
-        function toggleButterflies() {
-            isButterflyActive = !isButterflyActive;
-            if (!isButterflyActive) document.getElementById('butterfly-container').innerHTML = '';
+        function updateShuffleButton() {
+            const btn = document.getElementById('btn-shuffle');
+            btn.innerText = `Đổi Vị Trí (${shuffleCount < 0 ? 0 : shuffleCount})`;
+            btn.style.opacity = shuffleCount <= 0 ? "0.5" : "1";
         }
 
-        function toggleMusic() {
-            const m = document.getElementById('bg-music');
-            m.paused ? m.play() : m.pause();
+        function checkBoardStatus() {
+            const level = levels[currentLevelIdx];
+            let hasMove = false; let activeTiles = [];
+            for (let r = 0; r < level.rows; r++) {
+                for (let c = 0; c < level.cols; c++) {
+                    if (board[r][c] !== -1) activeTiles.push({ r, c, idx: board[r][c] });
+                }
+            }
+            for (let i = 0; i < activeTiles.length; i++) {
+                for (let j = i + 1; j < activeTiles.length; j++) {
+                    if (activeTiles[i].idx === activeTiles[j].idx && checkConnect(activeTiles[i], activeTiles[j], level.rows, level.cols)) {
+                        hasMove = true; break;
+                    }
+                }
+                if (hasMove) break;
+            }
+            if (!hasMove && matchedCount < level.rows * level.cols) {
+                if (shuffleCount > 0) manualShuffle(true); else initLevel();
+            }
         }
 
-        window.onload = () => { initLevel(); setInterval(createButterfly, 5000); };
+        function saveScore() {
+            let history = JSON.parse(localStorage.getItem('pikachuScores')) || [];
+            history.push({ name: playerName, score: score });
+            history.sort((a, b) => b.score - a.score);
+            localStorage.setItem('pikachuScores', JSON.stringify(history.slice(0, 10)));
+        }
+
+        function showLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            let history = JSON.parse(localStorage.getItem('pikachuScores')) || [];
+            list.innerHTML = history.length ? '' : '<p>Chưa có kỷ lục.</p>';
+            history.forEach((item, index) => {
+                list.innerHTML += `<div class="score-item"><span>${index+1}. ${item.name}</span> <span>${item.score}</span></div>`;
+            });
+            document.getElementById('score-modal').style.display = 'flex';
+        }
+
+        function closeScores() { document.getElementById('score-modal').style.display = 'none'; }
+        function toggleButterflies() { isButterflyActive = !isButterflyActive; if(!isButterflyActive) document.getElementById('butterfly-container').innerHTML = ''; }
+        function toggleMusic() { const m = document.getElementById('bg-music'); m.paused ? m.play() : m.pause(); }
     </script>
 </body>
 </html>

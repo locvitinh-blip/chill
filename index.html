@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yên Lộc - Thông Minh & Không Kẹt</title>
+    <title>Yên Lộc - Thử Thách 5 Màn</title>
     <style>
         :root { --tile-w: 14vw; --tile-h: 7.5vh; --cols: 4; --rows: 5; }
         @media (min-width: 600px) { :root { --tile-w: 60px; --tile-h: 75px; } }
@@ -26,40 +26,41 @@
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 4px; padding: 6px;
+            gap: 3px; padding: 5px;
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
+            border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .tile {
             width: var(--tile-w); height: var(--tile-h);
             background-size: cover; background-position: center;
-            border-radius: 6px; cursor: pointer;
-            transition: 0.1s; border: 2px solid transparent;
+            border-radius: 4px; cursor: pointer;
+            transition: 0.1s; border: 1.5px solid transparent;
         }
-        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 12px #00f2fe; transform: scale(1.05); z-index: 2; }
+        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 10px #00f2fe; transform: scale(1.05); z-index: 2; }
         .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
         .game-header { color: white; text-align: center; text-shadow: 2px 2px 5px #000; margin-bottom: 5px; }
-        h1 { font-size: 1.4rem; margin: 0; letter-spacing: 2px; }
-        #level-info { font-size: 0.9rem; color: #00f2fe; font-weight: bold; margin-bottom: 5px; }
+        h1 { font-size: 1.3rem; margin: 0; letter-spacing: 1px; }
+        #level-info { font-size: 0.85rem; color: #00f2fe; font-weight: bold; margin-bottom: 3px; }
 
         .controls-wrapper {
-            position: fixed; bottom: 25px; left: 0; right: 0;
-            z-index: 100; display: flex; justify-content: center; gap: 12px;
+            position: fixed; bottom: 20px; left: 0; right: 0;
+            z-index: 100; display: flex; justify-content: center; gap: 10px;
         }
 
         .btn-chill {
-            padding: 8px 18px; background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 25px;
-            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.8rem;
+            padding: 8px 15px; background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px;
+            color: white; cursor: pointer; backdrop-filter: blur(5px); font-size: 0.75rem;
         }
+        .btn-shuffle { background: rgba(0, 242, 254, 0.3); border-color: #00f2fe; }
 
         #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .butterfly { position: absolute; width: 35px; height: 35px; }
+        .butterfly { position: absolute; width: 32px; height: 32px; }
         @keyframes fly-right { 0% { left: -10%; top: var(--t); opacity: 0; } 100% { left: 110%; top: var(--et); opacity: 0; } }
         @keyframes fly-up { 0% { bottom: -10%; left: var(--l); opacity: 0; } 100% { bottom: 110%; left: var(--el); opacity: 0; } }
     </style>
@@ -74,7 +75,7 @@
             <div id="level-info">MÀN 1</div>
         </div>
         <div id="game-board"></div>
-        <button class="btn-chill" style="margin-top:10px" onclick="manualShuffle()">Đổi Vị Trí (Nếu Kẹt)</button>
+        <button id="btn-shuffle" class="btn-chill btn-shuffle" style="margin-top:10px" onclick="manualShuffle()">Đổi Vị Trí (3)</button>
     </div>
 
     <div id="butterfly-container"></div>
@@ -82,6 +83,7 @@
     <div class="controls-wrapper">
         <button class="btn-chill" onclick="toggleButterflies()">🦋 Bướm</button>
         <button class="btn-chill" onclick="toggleMusic()">🎵 Nhạc</button>
+        <button class="btn-chill" onclick="initLevel()">Chơi Lại</button>
     </div>
 
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
@@ -91,10 +93,12 @@
             { name: "MÀN 1: KHỞI ĐẦU", cols: 4, rows: 4, tileW: "18vw", tileH: "10vh" },
             { name: "MÀN 2: DỄ THƯƠNG", cols: 4, rows: 6, tileW: "17vw", tileH: "9vh" },
             { name: "MÀN 3: GẮN KẾT", cols: 6, rows: 6, tileW: "14vw", tileH: "8vh" },
-            { name: "MÀN 4: YÊU THƯƠNG", cols: 6, rows: 10, tileW: "13vw", tileH: "7vh" }
+            { name: "MÀN 4: YÊU THƯƠNG", cols: 6, rows: 9, tileW: "13vw", tileH: "7vh" },
+            { name: "MÀN 5: CỰC KHÓ", cols: 6, rows: 12, tileW: "11.5vw", tileH: "6.2vh" }
         ];
 
         let currentLevelIdx = 0;
+        let shuffleCount = 3;
         const childImages = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
         let board = []; 
@@ -106,6 +110,9 @@
             const level = levels[currentLevelIdx];
             const gameBoard = document.getElementById('game-board');
             document.getElementById('level-info').innerText = level.name;
+            
+            shuffleCount = 3; // Reset lượt đổi mỗi khi sang màn mới
+            updateShuffleButton();
 
             document.documentElement.style.setProperty('--cols', level.cols);
             document.documentElement.style.setProperty('--rows', level.rows);
@@ -137,7 +144,7 @@
                     }
                 }
             }
-            checkAndAutoShuffle(); // Kiểm tra ngay khi vào màn
+            checkBoardStatus();
         }
 
         function createTileUI(r, c, imgIdx) {
@@ -169,7 +176,7 @@
                         board[t1.r][t1.c] = board[t2.r][t2.c] = -1;
                         matchedCount += 2;
                         if (matchedCount === level.rows * level.cols) nextLevel();
-                        else checkAndAutoShuffle(); // Sau mỗi nước đi, kiểm tra xem còn nước không
+                        else checkBoardStatus();
                     }, 200);
                 } else {
                     setTimeout(() => {
@@ -181,18 +188,15 @@
             }
         }
 
-        // THUẬT TOÁN KIỂM TRA NƯỚC ĐI CÒN LẠI
-        function checkAndAutoShuffle() {
+        function checkBoardStatus() {
             const level = levels[currentLevelIdx];
             let hasMove = false;
             let activeTiles = [];
-
             for (let r = 0; r < level.rows; r++) {
                 for (let c = 0; c < level.cols; c++) {
                     if (board[r][c] !== -1) activeTiles.push({ r, c, idx: board[r][c] });
                 }
             }
-
             for (let i = 0; i < activeTiles.length; i++) {
                 for (let j = i + 1; j < activeTiles.length; j++) {
                     if (activeTiles[i].idx === activeTiles[j].idx && checkConnect(activeTiles[i], activeTiles[j], level.rows, level.cols)) {
@@ -201,14 +205,20 @@
                 }
                 if (hasMove) break;
             }
-
             if (!hasMove && matchedCount < level.rows * level.cols) {
-                console.log("Hết nước đi, đang tự động đảo bài...");
-                manualShuffle();
+                if (shuffleCount > 0) {
+                    alert("Hết nước đi! Hệ thống tự động đảo bài.");
+                    manualShuffle(true);
+                } else {
+                    alert("Hết lượt đổi vị trí và không còn nước đi! Bạn phải chơi lại màn này.");
+                    initLevel();
+                }
             }
         }
 
-        function manualShuffle() {
+        function manualShuffle(isAuto = false) {
+            if (!isAuto && shuffleCount <= 0) return;
+            
             const level = levels[currentLevelIdx];
             let currentImages = [];
             for (let r = 0; r < level.rows; r++) {
@@ -229,9 +239,15 @@
                     }
                 }
             }
-            selectedTiles = [];
-            // Sau khi đảo, kiểm tra lại xem có nước chưa, nếu vẫn chưa thì đảo tiếp (đệ quy)
-            checkAndAutoShuffle();
+            shuffleCount--;
+            updateShuffleButton();
+            checkBoardStatus();
+        }
+
+        function updateShuffleButton() {
+            const btn = document.getElementById('btn-shuffle');
+            btn.innerText = `Đổi Vị Trí (${shuffleCount < 0 ? 0 : shuffleCount})`;
+            btn.style.opacity = shuffleCount <= 0 ? "0.5" : "1";
         }
 
         function checkConnect(p1, p2, maxR, maxC) {
@@ -254,11 +270,11 @@
 
         function nextLevel() {
             if (currentLevelIdx < levels.length - 1) {
-                alert("Tuyệt vời! Qua màn tiếp theo nhé!");
+                alert("Xuất sắc! Chào mừng đến với " + levels[currentLevelIdx+1].name);
                 currentLevelIdx++;
                 initLevel();
             } else {
-                alert("Chúc mừng! Bạn đã hoàn thành tất cả các màn!");
+                alert("Vỡ òa! Bạn đã vượt qua thử thách 5 màn của Yên Lộc!");
                 currentLevelIdx = 0;
                 initLevel();
             }

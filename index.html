@@ -96,16 +96,11 @@
             { c: 6, r: 6, t: 120, g: 'left' },
             { c: 6, r: 6, t: 130, g: 'up' },
             { c: 8, r: 6, t: 140, g: 'right' },
-            { c: 8, r: 6, t: 150, g: 'down' },
-            { c: 8, r: 7, t: 170, g: 'left' },
-            { c: 8, r: 8, t: 180, g: 'up' },
-            { c: 8, r: 8, t: 190, g: 'right' },
-            { c: 8, r: 9, t: 200, g: 'down' }
+            { c: 8, r: 6, t: 150, g: 'down' }
         ];
 
-        let curLv = 0, score = 0, pName = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
+        let curLv = 0, score = 0, pName = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false, musicOn = false;
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
-        let musicOn = false;
 
         function toggleMusic() {
             const m = document.getElementById('bg-music');
@@ -129,8 +124,13 @@
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
             timeLeft = lv.t; updateBar();
-            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft<=0) gameOver(); }, 1000);
-            matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
+            timer = setInterval(() => { 
+                timeLeft--; 
+                updateBar(); 
+                if(timeLeft <= 0) gameOver(); 
+            }, 1000);
+            matched = 0; shuffles = 3; 
+            document.getElementById('sh-count').innerText = shuffles;
             generateBoard();
         }
 
@@ -178,6 +178,7 @@
             if (c1 === c2 && isColEmpty(c1, r1, r2)) return true;
             if (board[r1][c2] === -1 && isRowEmpty(r1, c1, c2) && isColEmpty(c2, r1, r2)) return true;
             if (board[r2][c1] === -1 && isRowEmpty(r2, c1, c2) && isColEmpty(c1, r1, r2)) return true;
+            
             for (let r = -1; r <= rows; r++) {
                 if (r === r1 || r === r2) continue;
                 const b1 = (r === -1 || r === rows) || board[r][c1] === -1;
@@ -198,7 +199,6 @@
             const tiles = document.querySelectorAll('.tile');
             const idx = r * levels[curLv].c + c;
 
-            // Bỏ chọn nếu bấm lại chính ô đó (Không trừ điểm)
             if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
                 tiles[idx].classList.remove('selected');
                 selected = [];
@@ -274,325 +274,11 @@
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
         function gameOver() { saveScore(); alert("HẾT GIỜ! Điểm: " + score); location.reload(); }
 
-        // --- CẬP NHẬT: CHỈ LẤY ĐIỂM OPEN ---
         async function showLeaderboard() {
             const list = document.getElementById('score-list');
             document.getElementById('score-modal').style.display = 'flex';
             list.innerHTML = "<p style='text-align:center;'>Đang tải...</p>";
             try {
-                // Sửa thành state=open để chỉ hiện các issue chưa bị đóng
-                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=open&per_page=50`, {
-                    headers: { 'Authorization': `token ${G_TOKEN}` }
-                });
-                const data = await res.json();
-                if (!data.length) { list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>"; }
-                else {
-                    data.sort((a, b) => (parseInt(b.title.replace('SCORE: ', '')) || 0) - (parseInt(a.title.replace('SCORE: ', '')) || 0));
-                    list.innerHTML = data.map((i, index) => {
-                        const s = (parseInt(i.title.replace('SCORE: ', '')) || 0).toLocaleString('de-DE');
-                        let n = (i.body || "Ẩn danh").replace(/Player[:\s]*/gi, '').split('|')[0].trim();
-                        return `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:16px;">
-                            <span>${index + 1}. ${n}</span><b style="color:#00f2fe;">${s} đ</b></div>`;
-                    }).join('');
-                }
-            } catch (e) { list.innerHTML = "<p style='text-align:center; color:red;'>Lỗi tải!</p>"; }
-        }
-
-        async function saveScore() {
-            if (score <= 0) return;
-            try {
-                await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `${pName}` })
-                });
-            } catch(e) { console.error(e); }
-        }
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pikachu Dâu Ry</title>
-    <style>
-        :root { --tile-w: 44px; --tile-h: 56px; --cols: 6; --rows: 4; }
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #000 url('background.jpg') no-repeat center center fixed;
-            background-size: cover; font-family: sans-serif;
-            overflow: hidden; color: white; display: flex; flex-direction: column; align-items: center;
-        }
-        .header-controls {
-            width: 100%; padding: 10px 0; background: rgba(0,0,0,0.85);
-            border-bottom: 2px solid #00f2fe; display: flex; flex-direction: column; align-items: center; gap: 5px;
-        }
-        .stats-row { display: flex; gap: 15px; font-weight: bold; font-size: 0.9rem; color: #00f2fe; }
-        .game-container {
-            flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5px; box-sizing: border-box;
-        }
-        #game-board {
-            display: grid; grid-template-columns: repeat(var(--cols), var(--tile-w));
-            grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 3px; padding: 8px; background: rgba(255,255,255,0.1);
-            border-radius: 10px; border: 1px solid #00f2fe; justify-content: center;
-        }
-        .tile { 
-            width: var(--tile-w); height: var(--tile-h); background-size: 100% 100%; 
-            border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s;
-        }
-        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 8px #fdfc47; transform: scale(1.05); }
-        .tile.matched { opacity: 0; pointer-events: none; transform: scale(0); }
-        .timer-bg { width: 150px; height: 6px; background: #222; border-radius: 5px; border: 1px solid #00f2fe; }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
-        .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
-        .btn-s { padding: 8px 12px; background: #111; border: 1px solid #00f2fe; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; }
-        .btn-end { border-color: #ff4d4d; color: #ff4d4d; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
-        .input-name { width: 100%; padding: 10px; margin: 15px 0; border-radius: 5px; text-align: center; box-sizing: border-box; background: #333; color: #fff; border: 1px solid #444; }
-        .menu-btn { width: 100%; padding: 12px; background: #00f2fe; color: #000; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-    <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
-
-    <div id="start-screen" class="modal">
-        <div class="modal-box">
-            <h2 style="color:#00f2fe; margin:0;">DÂU - RY</h2>
-            <input type="text" id="p-name" class="input-name" placeholder="Nhập tên..." maxlength="10">
-            <button class="menu-btn" onclick="initGame()">CHƠI NGAY</button>
-            <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">XẾP HẠNG</button>
-        </div>
-    </div>
-
-    <div id="score-modal" class="modal" style="display:none;">
-        <div class="modal-box">
-            <h3 style="color:#fdfc47; margin-top:0;">🏆 BẢNG VÀNG 🏆</h3>
-            <div id="score-list" style="text-align: left; max-height: 250px; overflow-y: auto; margin-bottom: 15px; font-size: 14px; color: #ddd;">
-            </div>
-            <button class="menu-btn" onclick="document.getElementById('score-modal').style.display='none'">ĐÓNG</button>
-        </div>
-    </div>
-
-    <div id="game-view" style="display:none; width:100%; height:100%; flex-direction:column;">
-        <div class="header-controls">
-            <div class="stats-row">
-                <span>LV: <b id="lv">1</b></span>
-                <span><b id="sc">0</b>đ</span>
-                <span>TRỘN: <b id="sh-count">3</b></span>
-            </div>
-            <div class="timer-bg"><div id="timer-bar"></div></div>
-        </div>
-
-        <div class="game-container">
-            <div id="game-board"></div>
-            <div class="btn-row">
-                <button class="btn-s" onclick="shuffleBtn()">TRỘN</button>
-                <button class="btn-s btn-end" onclick="finishGame()">KẾT THÚC</button>
-                <button class="btn-s" id="m-btn" onclick="toggleMusic()">MỞ NHẠC</button>
-                <button class="btn-s" onclick="location.reload()">MENU</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const G_TOKEN = 'ghp_'+'7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
-        const G_REPO = 'locvitinh-blip/chill';
-
-        const levels = [
-            { c: 6, r: 4, t: 100, g: 'none' },
-            { c: 6, r: 4, t: 90, g: 'down' },
-            { c: 6, r: 6, t: 120, g: 'left' },
-            { c: 6, r: 6, t: 130, g: 'up' },
-            { c: 8, r: 6, t: 140, g: 'right' },
-            { c: 8, r: 6, t: 150, g: 'down' },
-            { c: 8, r: 7, t: 170, g: 'left' },
-            { c: 8, r: 8, t: 180, g: 'up' },
-            { c: 8, r: 8, t: 190, g: 'right' },
-            { c: 8, r: 9, t: 200, g: 'down' }
-        ];
-
-        let curLv = 0, score = 0, pName = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
-        const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
-        let musicOn = false;
-
-        function toggleMusic() {
-            const m = document.getElementById('bg-music');
-            const btn = document.getElementById('m-btn');
-            if(!musicOn) { m.play(); btn.innerText = "TẮT NHẠC"; }
-            else { m.pause(); btn.innerText = "MỞ NHẠC"; }
-            musicOn = !musicOn;
-        }
-
-        function initGame() {
-            pName = document.getElementById('p-name').value || "Dâu Ry";
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('game-view').style.display = 'flex';
-            loadLevel();
-        }
-
-        function loadLevel() {
-            clearInterval(timer);
-            const lv = levels[curLv];
-            document.getElementById('lv').innerText = curLv + 1;
-            document.documentElement.style.setProperty('--cols', lv.c);
-            document.documentElement.style.setProperty('--rows', lv.r);
-            timeLeft = lv.t; updateBar();
-            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft<=0) gameOver(); }, 1000);
-            matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
-            generateBoard();
-        }
-
-        function generateBoard() {
-            const lv = levels[curLv];
-            let pairs = [];
-            for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
-            pairs.sort(() => Math.random() - 0.5);
-            board = [];
-            for(let r=0; r<lv.r; r++) {
-                board[r] = [];
-                for(let c=0; c<lv.c; c++) { board[r][c] = pairs.pop(); }
-            }
-            renderBoard();
-        }
-
-        function renderBoard() {
-            const container = document.getElementById('game-board');
-            container.innerHTML = '';
-            board.forEach((row, r) => {
-                row.forEach((id, c) => {
-                    const tile = document.createElement('div');
-                    tile.className = `tile ${id === -1 ? 'matched' : ''}`;
-                    if(id !== -1) {
-                        tile.style.backgroundImage = `url('${imgs[id]}')`;
-                        tile.onclick = () => clickTile(r, c);
-                    }
-                    container.appendChild(tile);
-                });
-            });
-        }
-
-        function canConnect(r1, c1, r2, c2) {
-            if (board[r1][c1] !== board[r2][c2] || (r1 === r2 && c1 === c2)) return false;
-            const rows = levels[curLv].r, cols = levels[curLv].c;
-            const isRowEmpty = (r, c1, c2) => {
-                for (let c = Math.min(c1, c2) + 1; c < Math.max(c1, c2); c++) if (board[r][c] !== -1) return false;
-                return true;
-            };
-            const isColEmpty = (c, r1, r2) => {
-                for (let r = Math.min(r1, r2) + 1; r < Math.max(r1, r2); r++) if (board[r][c] !== -1) return false;
-                return true;
-            };
-            if (r1 === r2 && isRowEmpty(r1, c1, c2)) return true;
-            if (c1 === c2 && isColEmpty(c1, r1, r2)) return true;
-            if (board[r1][c2] === -1 && isRowEmpty(r1, c1, c2) && isColEmpty(c2, r1, r2)) return true;
-            if (board[r2][c1] === -1 && isRowEmpty(r2, c1, c2) && isColEmpty(c1, r1, r2)) return true;
-            for (let r = -1; r <= rows; r++) {
-                if (r === r1 || r === r2) continue;
-                const b1 = (r === -1 || r === rows) || board[r][c1] === -1;
-                const b2 = (r === -1 || r === rows) || board[r][c2] === -1;
-                if (b1 && b2 && isColEmpty(c1, r1, r) && isColEmpty(c2, r2, r) && (r === -1 || r === rows || isRowEmpty(r, c1, c2))) return true;
-            }
-            for (let c = -1; c <= cols; c++) {
-                if (c === c1 || c === c2) continue;
-                const b1 = (c === -1 || c === cols) || board[r1][c] === -1;
-                const b2 = (c === -1 || c === cols) || board[r2][c] === -1;
-                if (b1 && b2 && isRowEmpty(r1, c1, c) && isRowEmpty(r2, c2, c) && (c === -1 || c === cols || isColEmpty(c, r1, r2))) return true;
-            }
-            return false;
-        }
-
-        function clickTile(r, c) {
-            if (isProcessing || board[r][c] === -1) return;
-            const tiles = document.querySelectorAll('.tile');
-            const idx = r * levels[curLv].c + c;
-
-            // Bỏ chọn nếu bấm lại chính ô đó (Không trừ điểm)
-            if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
-                tiles[idx].classList.remove('selected');
-                selected = [];
-                return;
-            }
-
-            tiles[idx].classList.add('selected');
-            selected.push({r, c, id: board[r][c]});
-
-            if(selected.length === 2) {
-                isProcessing = true;
-                const [a, b] = selected;
-                if(canConnect(a.r, a.c, b.r, b.c)) {
-                    board[a.r][a.c] = -1; board[b.r][b.c] = -1;
-                    score += 100; document.getElementById('sc').innerText = score;
-                    matched += 2;
-                    setTimeout(() => {
-                        applyGravity();
-                        renderBoard();
-                        if(matched === levels[curLv].c * levels[curLv].r) {
-                            if(curLv < levels.length - 1) { curLv++; loadLevel(); }
-                            else { saveScore(); alert("PHÁ ĐẢO!"); location.reload(); }
-                        }
-                        isProcessing = false;
-                    }, 300);
-                } else {
-                    score = Math.max(0, score - 20);
-                    document.getElementById('sc').innerText = score;
-                    setTimeout(() => { renderBoard(); isProcessing = false; }, 300);
-                }
-                selected = [];
-            }
-        }
-
-        function applyGravity() {
-            const mode = levels[curLv].g, rows = levels[curLv].r, cols = levels[curLv].c;
-            if(mode === 'down') {
-                for(let c=0; c<cols; c++) {
-                    let t = []; for(let r=0; r<rows; r++) if(board[r][c]!==-1) t.push(board[r][c]);
-                    while(t.length < rows) t.unshift(-1);
-                    for(let r=0; r<rows; r++) board[r][c] = t[r];
-                }
-            } else if(mode === 'up') {
-                for(let c=0; c<cols; c++) {
-                    let t = []; for(let r=0; r<rows; r++) if(board[r][c]!==-1) t.push(board[r][c]);
-                    while(t.length < rows) t.push(-1);
-                    for(let r=0; r<rows; r++) board[r][c] = t[r];
-                }
-            } else if(mode === 'left') {
-                for(let r=0; r<rows; r++) {
-                    let t = board[r].filter(id => id !== -1);
-                    while(t.length < cols) t.push(-1); board[r] = t;
-                }
-            } else if(mode === 'right') {
-                for(let r=0; r<rows; r++) {
-                    let t = board[r].filter(id => id !== -1);
-                    while(t.length < cols) t.unshift(-1); board[r] = t;
-                }
-            }
-        }
-
-        function shuffleBtn() {
-            if(shuffles > 0) {
-                let active = []; board.forEach(row => row.forEach(id => { if(id!==-1) active.push(id); }));
-                active.sort(() => Math.random() - 0.5);
-                board.forEach((row, r) => row.forEach((id, c) => { if(board[r][c]!==-1) board[r][c] = active.pop(); }));
-                shuffles--; document.getElementById('sh-count').innerText = shuffles;
-                renderBoard();
-            }
-        }
-
-        function finishGame() { if(confirm("Lưu điểm và thoát?")) { saveScore(); alert("Điểm của bạn: " + score); location.reload(); } }
-        function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
-        function gameOver() { saveScore(); alert("HẾT GIỜ! Điểm: " + score); location.reload(); }
-
-        // --- CẬP NHẬT: CHỈ LẤY ĐIỂM OPEN ---
-        async function showLeaderboard() {
-            const list = document.getElementById('score-list');
-            document.getElementById('score-modal').style.display = 'flex';
-            list.innerHTML = "<p style='text-align:center;'>Đang tải...</p>";
-            try {
-                // Sửa thành state=open để chỉ hiện các issue chưa bị đóng
                 const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=open&per_page=50`, {
                     headers: { 'Authorization': `token ${G_TOKEN}` }
                 });

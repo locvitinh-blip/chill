@@ -36,6 +36,7 @@
         #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
         .btn-row { display: flex; gap: 8px; margin-top: 10px; }
         .btn-s { padding: 8px 12px; background: #111; border: 1px solid #00f2fe; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        .btn-end { border-color: #ff4d4d; color: #ff4d4d; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
         .input-name { width: 100%; padding: 10px; margin: 15px 0; border-radius: 5px; text-align: center; box-sizing: border-box; background: #333; color: #fff; border: 1px solid #444; }
@@ -78,6 +79,7 @@
             <div id="game-board"></div>
             <div class="btn-row">
                 <button class="btn-s" onclick="shuffleBtn()">TRỘN</button>
+                <button class="btn-s btn-end" onclick="finishGame()">KẾT THÚC</button>
                 <button class="btn-s" id="m-btn" onclick="toggleMusic()">TẮT NHẠC</button>
                 <button class="btn-s" onclick="location.reload()">MENU</button>
             </div>
@@ -188,6 +190,9 @@
                         isProcessing = false;
                     }, 300);
                 } else {
+                    // TRỪ ĐIỂM KHI SAI
+                    score = Math.max(0, score - 20); 
+                    document.getElementById('sc').innerText = score;
                     setTimeout(() => { renderBoard(); isProcessing = false; }, 300);
                 }
                 selected = [];
@@ -240,6 +245,15 @@
 
         function shuffleBtn() { if(shuffles > 0) shuffleLogic(); }
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
+        
+        function finishGame() {
+            if(confirm("Bạn muốn kết thúc trò chơi và lưu điểm ngay bây giờ?")) {
+                saveScore();
+                alert("Đã lưu điểm: " + score);
+                location.reload();
+            }
+        }
+
         function gameOver() { saveScore(); alert("HẾT GIỜ! Điểm: " + score); location.reload(); }
 
         // --- HỆ THỐNG XẾP HẠNG GITHUB ---
@@ -256,23 +270,19 @@
                 if (data.length === 0) {
                     list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>";
                 } else {
-                    // 1. Sắp xếp điểm cao xuống thấp
                     data.sort((a, b) => {
                         const scoreA = parseInt(a.title.replace('SCORE: ', '')) || 0;
                         const scoreB = parseInt(b.title.replace('SCORE: ', '')) || 0;
                         return scoreB - scoreA;
                     });
 
-                    // 2. Hiển thị sạch sẽ: Tên + Điểm
                     list.innerHTML = data.map((i, index) => {
                         const rawScore = parseInt(i.title.replace('SCORE: ', '')) || 0;
-                        const formattedScore = rawScore.toLocaleString('de-DE'); // Định dạng 1.000
+                        const formattedScore = rawScore.toLocaleString('de-DE');
                         
-                        // Xử lý tên: Bỏ chữ "Player", bỏ ngày giờ nếu có trong body
                         let cleanName = i.body || "Ẩn danh";
-                        cleanName = cleanName.replace(/Player[:\s]*/gi, ''); // Xóa chữ Player
-                        cleanName = cleanName.split('|')[0].trim(); // Nếu có ngày giờ dạng "Lộc | 2024..." thì chỉ lấy "Lộc"
-                        cleanName = cleanName.split(' ')[0]; // Lấy từ đầu tiên (tên chính) nếu bạn muốn cực gọn
+                        cleanName = cleanName.replace(/Player[:\s]*/gi, '');
+                        cleanName = cleanName.split('|')[0].trim();
 
                         return `
                             <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:16px;">

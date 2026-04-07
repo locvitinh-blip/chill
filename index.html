@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pikachu - Dâu Ry</title>
+    <title>Pikachu - Dau Ry</title>
     <style>
         :root { 
             --tile-w: 42px; --tile-h: 54px; 
@@ -30,6 +30,7 @@
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
+            /* Khóa khung hình - Tự co giãn theo màn hình */
             transform: scale(min(1, calc(95vw / (var(--cols) * var(--tile-w) + 40px)), calc(75vh / (var(--rows) * var(--tile-h) + 120px))));
             transform-origin: center;
         }
@@ -38,7 +39,7 @@
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; background-repeat: no-repeat;
             border-radius: 3px; border: 1px solid rgba(255,255,255,0.2);
-            cursor: pointer; box-sizing: border-box; transition: all 0.3s ease;
+            cursor: pointer; box-sizing: border-box; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tile.selected { border: 3px solid #00f2fe; box-shadow: 0 0 15px #00f2fe; z-index: 10; transform: scale(1.08); }
         .tile.matched { opacity: 0; pointer-events: none; transform: scale(0); }
@@ -96,16 +97,17 @@
     </div>
 
     <script>
+        // CẤU HÌNH GITHUB - ĐIỀN THÔNG TIN CỦA BẠN VÀO ĐÂY
         const k1 = 'ghp_', k2 = '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
         const G_TOKEN = k1 + k2;
         const G_REPO = 'locvitinh-blip/chill';
 
         const levels = [
-            { c: 4, r: 4, t: 100, g: "none" },
-            { c: 6, r: 4, t: 150, g: "left" },
-            { c: 6, r: 6, t: 200, g: "right" },
-            { c: 8, r: 8, t: 350, g: "split" },
-            { c: 10, r: 10, t: 500, g: "center" }
+            { c: 4, r: 4, t: 100, g: "none" },   // Màn 1: Đứng yên
+            { c: 6, r: 4, t: 150, g: "left" },   // Màn 2: Dạt trái
+            { c: 6, r: 6, t: 200, g: "right" },  // Màn 3: Dạt phải
+            { c: 8, r: 8, t: 350, g: "split" },  // Màn 4: Tách 2 bên
+            { c: 10, r: 10, t: 500, g: "center" } // Màn 5: Gộp vào giữa
         ];
 
         let curLv = 0, score = 0, name = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3;
@@ -127,7 +129,11 @@
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
             timeLeft = lv.t; updateBar();
-            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); } }, 1000);
+            timer = setInterval(() => { 
+                timeLeft--; 
+                updateBar(); 
+                if(timeLeft <= 0) { alert("Hết giờ rồi!"); location.reload(); } 
+            }, 1000);
             matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
             generateBoard();
         }
@@ -164,6 +170,7 @@
         function clickTile(r, c) {
             const el = document.querySelector(`#game-board div:nth-child(${r * levels[curLv].c + c + 1})`);
             
+            // HỦY CHỌN KHI NHẤP LẠI VÀO CHÍNH NÓ
             if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
                 el.classList.remove('selected');
                 selected = [];
@@ -181,12 +188,12 @@
                         score += 100; document.getElementById('sc').innerText = score;
                         matched += 2;
                         applyGravity();
+                        setTimeout(checkDeadlock, 500); // Tự động check kẹt hình
                         if(matched === levels[curLv].c * levels[curLv].r) nextLevel();
-                        else checkDeadlock();
                     }, 250);
                 } else {
-                    // TRỪ ĐIỂM KHI CHỌN SAI
-                    score = Math.max(0, score - 10); 
+                    // TRỪ ĐIỂM KHI SAI
+                    score = Math.max(0, score - 10);
                     document.getElementById('sc').innerText = score;
                     setTimeout(() => {
                         document.querySelectorAll('.tile.selected').forEach(e => e.classList.remove('selected'));
@@ -221,21 +228,19 @@
         function checkDeadlock() {
             let active = [];
             board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
-            
+            if (active.length === 0) return;
+
             let canMove = false;
-            // Kiểm tra xem còn ít nhất 1 cặp trùng nhau không
             const counts = {};
             active.forEach(id => counts[id] = (counts[id] || 0) + 1);
-            for(let id in counts) {
-                if(counts[id] >= 2) { canMove = true; break; }
-            }
+            for(let id in counts) { if(counts[id] >= 2) { canMove = true; break; } }
 
-            if(!canMove && matched < levels[curLv].c * levels[curLv].r) {
+            if(!canMove) {
                 if(shuffles > 0) {
-                    alert("Hết nước đi! Tự động trộn hình.");
+                    alert("Không còn cặp trùng! Đang tự động trộn hình...");
                     shuffleLogic(true);
                 } else {
-                    alert("Hết lượt trộn và hết nước đi! GAME OVER.");
+                    alert("Hết lượt trộn và không còn nước đi! GAME OVER.");
                     saveScore();
                     location.reload();
                 }
@@ -247,14 +252,17 @@
             let currentImgs = [];
             board.forEach(row => row.forEach(id => { if(id !== -1) currentImgs.push(id); }));
             currentImgs.sort(() => Math.random() - 0.5);
-            board.forEach((row, r) => row.forEach((id, c) => { if(id !== -1) board[r][c] = currentImgs.pop(); }));
+            board.forEach((row, r) => {
+                row.forEach((id, c) => { if(board[r][c] !== -1) board[r][c] = currentImgs.pop(); });
+            });
             if(!auto) { shuffles--; document.getElementById('sh-count').innerText = shuffles; }
             render();
+            setTimeout(checkDeadlock, 500);
         }
 
         function shuffleBtn() { 
             if(shuffles > 0) shuffleLogic(false); 
-            else alert("Đã hết lượt trộn hình!");
+            else alert("Bạn đã dùng hết lượt trộn hình!");
         }
 
         function nextLevel() {

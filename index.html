@@ -200,17 +200,30 @@
 
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
+            
             const tiles = document.querySelectorAll('.tile');
             const idx = r * levels[curLv].c + c;
+
+            // 1. Nếu bấm vào ô đã được chọn trước đó -> Bỏ chọn và thoát (Không trừ điểm)
+            if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
+                tiles[idx].classList.remove('selected');
+                selected = [];
+                return;
+            }
+
+            // 2. Thêm hiệu ứng chọn và lưu vào mảng tạm
             tiles[idx].classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
                 isProcessing = true;
                 const [a, b] = selected;
+                
                 if(canConnect(a.r, a.c, b.r, b.c)) {
+                    // ĂN ĐÚNG
                     board[a.r][a.c] = -1; board[b.r][b.c] = -1;
-                    score += 100; document.getElementById('sc').innerText = score;
+                    score += 100; 
+                    document.getElementById('sc').innerText = score;
                     matched += 2;
                     setTimeout(() => {
                         applyGravity();
@@ -222,9 +235,13 @@
                         isProcessing = false;
                     }, 300);
                 } else {
+                    // CHỌN SAI -> TRỪ ĐIỂM
                     score = Math.max(0, score - 20);
                     document.getElementById('sc').innerText = score;
-                    setTimeout(() => { renderBoard(); isProcessing = false; }, 300);
+                    setTimeout(() => { 
+                        renderBoard(); 
+                        isProcessing = false; 
+                    }, 300);
                 }
                 selected = [];
             }

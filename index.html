@@ -2,23 +2,22 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yên Lộc - Pikachu Legend 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Yên Lộc - Pikachu Fix 2026</title>
     <style>
-        :root { --tile-w: 45px; --tile-h: 58px; --cols: 6; --rows: 4; }
+        :root { --tile-w: 42px; --tile-h: 55px; --cols: 6; --rows: 4; }
 
         body, html {
-            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            margin: 0; padding: 0; width: 100%; height: 100%;
             background: #000 url('background.jpg') no-repeat center center fixed;
             background-size: cover; font-family: 'Segoe UI', sans-serif;
-            overflow: hidden; color: white;
+            overflow: hidden; color: white; position: fixed; /* Chống cuộn bậy */
         }
 
-        /* --- CHẾ ĐỘ XOAY TOÀN WEB (CẢI TIẾN) --- */
+        /* --- XOAY WEB TOÀN DIỆN --- */
         body.rotated-web {
             width: 100vh !important;
             height: 100vw !important;
-            position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%) rotate(90deg);
             transform-origin: center center;
@@ -26,119 +25,107 @@
 
         #game-view { 
             display: none; width: 100%; height: 100%; 
-            flex-direction: column; position: relative;
+            flex-direction: column; 
         }
 
         .header-controls {
-            padding: 10px 5px; background: rgba(0,0,0,0.9);
+            height: 60px; /* Cố định chiều cao header */
+            background: rgba(0,0,0,0.9);
             border-bottom: 2px solid #00f2fe;
             display: flex; justify-content: space-around; align-items: center;
-            z-index: 100;
+            padding: 0 10px; z-index: 100;
         }
-
-        .stats-box { font-weight: bold; font-size: 0.9rem; color: #00f2fe; text-shadow: 0 0 5px #000; }
 
         .game-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
-            padding: 10px; box-sizing: border-box;
+            overflow: hidden; padding: 10px;
         }
 
+        /* TỰ CO GIÃN BẢNG GAME THEO MÀN HÌNH */
         #game-board {
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 3px; padding: 10px; background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px; border: 1px solid rgba(0,242,254,0.4);
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            gap: 2px; padding: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 10px; border: 1px solid #00f2fe;
+            transform: scale(0.9); /* Mặc định thu nhỏ nhẹ để an toàn */
         }
+
+        @media (max-height: 400px) { #game-board { transform: scale(0.7); } }
+        @media (max-width: 400px) { #game-board { transform: scale(0.8); } }
 
         .tile { 
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; border-radius: 4px;
             border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; transition: 0.1s;
         }
-        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; transform: scale(1.05); z-index: 2; }
-        .tile.matched { opacity: 0 !important; pointer-events: none; visibility: hidden; }
+        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; }
+        .tile.matched { opacity: 0 !important; pointer-events: none; }
 
         .btn-action {
-            padding: 8px 12px; background: linear-gradient(180deg, #333, #000);
-            border: 1px solid #00f2fe; color: white; border-radius: 8px;
-            font-size: 11px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            padding: 10px 15px; background: #222; border: 1px solid #00f2fe;
+            color: white; border-radius: 8px; font-size: 12px; font-weight: bold;
         }
-        .btn-action:active { background: #00f2fe; color: #000; }
 
-        .timer-bg { width: 100px; height: 8px; background: #222; border-radius: 10px; border: 1px solid #00f2fe; overflow: hidden; }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; box-shadow: 0 0 10px #00f2fe; }
+        .timer-bg { width: 80px; height: 10px; background: #111; border: 1px solid #00f2fe; border-radius: 5px; }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
-        /* MODAL */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 280px; }
-        .input-name { width: 100%; padding: 12px; margin: 15px 0; border-radius: 10px; border: none; text-align: center; font-weight: bold; }
-        .menu-btn { width: 100%; padding: 12px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; }
+        .menu-btn { width: 100%; padding: 15px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body id="main-body">
 
-    <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
-
     <div id="start-screen" class="modal">
         <div class="modal-box">
             <h1 style="color:#00f2fe; margin:0;">YÊN LỘC</h1>
-            <p style="font-size: 12px; color: #aaa; margin-bottom: 20px;">LỘC VI TÍNH - PIKACHU 2026</p>
-            <input type="text" id="p-name" class="input-name" placeholder="NHẬP TÊN BẠN..." maxlength="10">
-            <button class="menu-btn" onclick="initGame()">VÀO TRÒ CHƠI</button>
-            <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">BẢNG ĐIỂM</button>
+            <p style="font-size: 14px; margin-bottom: 20px;">LỘC VI TÍNH</p>
+            <button class="menu-btn" onclick="startAndFull()">VÀO GAME & FULL MÀN HÌNH</button>
         </div>
     </div>
 
     <div id="game-view">
         <div class="header-controls">
-            <div class="stats-box">LV <span id="lv">1</span></div>
+            <div style="font-size: 12px;">LV <span id="lv">1</span> - <span id="sc">0</span>đ</div>
             <div class="timer-bg"><div id="timer-bar"></div></div>
-            <div class="stats-box"><span id="sc">0</span>đ</div>
-            <button class="btn-action" onclick="toggleFullLandscape()">XOAY FULL</button>
+            <button class="btn-action" onclick="toggleRotate()">XOAY WEB</button>
             <button class="btn-action" onclick="shuffleBtn()">TRỘN</button>
             <button class="btn-action" onclick="location.reload()">MENU</button>
         </div>
-        
         <div class="game-container">
             <div id="game-board"></div>
         </div>
     </div>
 
     <script>
-        // --- THÔNG TIN CỦA BẠN (ĐIỀN VÀO ĐÂY) ---
-        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
-        const G_REPO = 'locvitinh-blip/chill'; 
+        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
+        const G_REPO = 'locvitinh-blip/chill';
 
         const levels = [
-            { c: 6, r: 4, t: 150 }, // Màn 1: 6x4 (Ngang cực đẹp)
+            { c: 6, r: 4, t: 150 },
             { c: 8, r: 5, t: 200 },
             { c: 10, r: 6, t: 300 }
         ];
 
-        let curLv = 0, score = 0, name = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
+        let curLv = 0, score = 0, timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
-        // HÀM XOAY TOÀN WEB VÀ FULLSCREEN
-        function toggleFullLandscape() {
-            const body = document.getElementById('main-body');
-            body.classList.toggle('rotated-web');
+        // HÀM QUAN TRỌNG: VỪA CHƠI VỪA ÉP FULLSCREEN
+        function startAndFull() {
+            // Mở Fullscreen ngay khi bấm nút để trình duyệt cho phép ẩn thanh địa chỉ
+            const doc = document.documentElement;
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+            else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
 
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen blocked"));
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function initGame() {
-            name = document.getElementById('p-name').value || "Yên Lộc";
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-view').style.display = 'flex';
             loadLevel();
+        }
+
+        function toggleRotate() {
+            document.getElementById('main-body').classList.toggle('rotated-web');
         }
 
         function loadLevel() {
@@ -147,14 +134,8 @@
             document.getElementById('lv').innerText = curLv + 1;
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
-            
             timeLeft = lv.t; updateBar();
-            timer = setInterval(() => { 
-                timeLeft--; 
-                updateBar(); 
-                if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); } 
-            }, 1000);
-            
+            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft<=0) location.reload(); }, 1000);
             matched = 0; shuffles = 3; isProcessing = false;
             generateBoard();
         }
@@ -164,10 +145,8 @@
             let pairs = [];
             for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
             pairs.sort(() => Math.random() - 0.5);
-            
             const container = document.getElementById('game-board');
             container.innerHTML = ''; board = [];
-
             for(let r=0; r<lv.r; r++) {
                 board[r] = [];
                 for(let c=0; c<lv.c; c++) {
@@ -179,37 +158,27 @@
                     container.appendChild(tile);
                 }
             }
-            setTimeout(checkDeadlock, 1000);
         }
 
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
             const tileEl = document.getElementById(`t-${r}-${c}`);
-            
-            if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
-                tileEl.classList.remove('selected'); selected = []; return;
-            }
-
             tileEl.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
                 isProcessing = true;
                 const [a, b] = selected;
-                if(a.id === b.id) {
+                if(a.id === b.id && (a.r !== b.r || a.c !== b.c)) {
                     document.getElementById(`t-${a.r}-${a.c}`).classList.add('matched');
                     document.getElementById(`t-${b.r}-${b.c}`).classList.add('matched');
-                    setTimeout(() => {
-                        board[a.r][a.c] = -1; board[b.r][b.c] = -1;
-                        score += 100; document.getElementById('sc').innerText = score;
-                        matched += 2;
-                        if(matched === levels[curLv].c * levels[curLv].r) {
-                            if(curLv < levels.length - 1) { curLv++; loadLevel(); }
-                            else { alert("XUẤT SẮC! PHÁ ĐẢO!"); location.reload(); }
-                        } else {
-                            setTimeout(() => { checkDeadlock(); isProcessing = false; }, 300);
-                        }
-                    }, 200);
+                    board[a.r][a.c] = -1; board[b.r][b.c] = -1;
+                    score += 100; document.getElementById('sc').innerText = score;
+                    matched += 2;
+                    if(matched === levels[curLv].c * levels[curLv].r) {
+                        curLv < levels.length-1 ? (curLv++, loadLevel()) : alert("THẮNG!");
+                    }
+                    isProcessing = false;
                 } else {
                     setTimeout(() => {
                         document.getElementById(`t-${a.r}-${a.c}`).classList.remove('selected');
@@ -221,25 +190,14 @@
             }
         }
 
-        function checkDeadlock() {
-            let active = [];
-            board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
-            if (active.length === 0) return;
-            let counts = {};
-            active.forEach(id => counts[id] = (counts[id] || 0) + 1);
-            let hasPairs = false;
-            for(let id in counts) { if(counts[id] >= 2) { hasPairs = true; break; } }
-            if(!hasPairs) shuffleLogic(true);
-        }
-
-        function shuffleLogic(auto) {
+        function shuffleLogic() {
             let currentImgs = [];
             board.forEach(row => row.forEach(id => { if(id !== -1) currentImgs.push(id); }));
             currentImgs.sort(() => Math.random() - 0.5);
             board.forEach((row, r) => {
                 row.forEach((id, c) => { if(board[r][c] !== -1) board[r][c] = currentImgs.pop(); });
             });
-            if(!auto) shuffles--;
+            shuffles--;
             board.forEach((row, r) => {
                 row.forEach((id, c) => {
                     const tile = document.getElementById(`t-${r}-${c}`);
@@ -248,7 +206,7 @@
             });
         }
 
-        function shuffleBtn() { if(!isProcessing && shuffles > 0) shuffleLogic(false); }
+        function shuffleBtn() { if(shuffles > 0) shuffleLogic(); }
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
     </script>
 </body>

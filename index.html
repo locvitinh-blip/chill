@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Yến Lộc - Chơi cùng các con</title>
     <style>
-    /* --- CỐ ĐỊNH KÍCH THƯỚC Ô GIỐNG PIKACHU CỔ ĐIỂN --- */
     :root { 
-        /* Kích thước ô chuẩn trên điện thoại */
-        --tile-w: 45px; 
-        --tile-h: 56px; 
+        /* Kích thước chuẩn cho điện thoại */
+        --tile-w: 48px; 
+        --tile-h: 60px; 
         --cols: 4; 
-        --rows: 5; 
+        --rows: 4; 
     }
 
-    /* Trên máy tính hoặc màn hình lớn, ô vẫn giữ kích thước chuẩn, không bị to ra */
-    @media (min-width: 600px) {
+    /* Khóa kích thước trên máy tính để không bị to quá khổ */
+    @media (min-width: 768px) {
         :root {
             --tile-w: 55px; 
             --tile-h: 70px;
@@ -26,84 +25,46 @@
         margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
         background: #000 url('background.jpg') no-repeat center center fixed;
         background-size: cover; font-family: 'Segoe UI', sans-serif;
-        touch-action: none; color: white;
     }
 
-    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1; }
+    /* Lớp phủ mờ giúp nổi bật bảng game */
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1; }
 
-    /* MENU CHÍNH */
-    #main-menu {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        z-index: 10; text-align: center; width: 90%; max-width: 400px;
-        display: flex; flex-direction: column; gap: 20px;
-    }
-    .logo-title { 
-        font-size: 3rem; font-weight: 900; color: #00f2fe; 
-        text-shadow: 0 0 20px #00f2fe; margin-bottom: 20px; letter-spacing: 5px; 
-    }
-    
-    .menu-btn {
-        padding: 15px; background: rgba(255, 255, 255, 0.1); border: 2px solid #00f2fe;
-        border-radius: 50px; color: white; font-size: 1.2rem; font-weight: bold;
-        cursor: pointer; transition: 0.3s; backdrop-filter: blur(10px);
-    }
-    .menu-btn:hover { background: #00f2fe; color: black; box-shadow: 0 0 30px #00f2fe; }
-
-    /* GIAO DIỆN CHƠI */
-    #game-view { display: none; position: relative; z-index: 5; width: 100%; height: 100%; }
-    
     #game-container {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        display: flex; flex-direction: column; align-items: center; width: 100%;
-        max-height: 95vh; /* Không cho vượt quá chiều cao màn hình */
+        z-index: 5; display: flex; flex-direction: column; align-items: center;
+        width: 95%; max-height: 90vh;
     }
 
     #game-board {
-        display: grid; 
+        display: grid;
         grid-template-columns: repeat(var(--cols), var(--tile-w));
         grid-template-rows: repeat(var(--rows), var(--tile-h));
-        gap: 2px; /* Khoảng cách nhỏ giữa các ô giống bản gốc */
-        padding: 5px; 
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px); 
-        border-radius: 8px; 
-        border: 1px solid rgba(255,255,255,0.3);
-        /* Tự động cuộn nếu bảng quá to so với màn hình điện thoại cũ */
-        overflow: auto; 
+        gap: 3px;
+        padding: 5px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        /* Nếu bảng quá lớn (Màn 5), nó sẽ tự thu nhỏ lại để vừa màn hình */
+        zoom: 0.9; 
     }
+    
+    /* Chống tràn cho màn hình cực nhỏ */
+    @media (max-height: 600px) { #game-board { zoom: 0.7; } }
 
     .tile { 
-        width: var(--tile-w); 
-        height: var(--tile-h); 
-        background-size: 100% 100%; /* Ảnh phủ kín ô */
-        background-repeat: no-repeat;
-        background-position: center; 
-        border-radius: 3px; 
-        cursor: pointer; 
-        border: 1px solid rgba(255,255,255,0.1); /* Viền mờ bao quanh mỗi ô */
-        box-sizing: border-box;
+        width: var(--tile-w); height: var(--tile-h); 
+        background-size: 100% 100%; background-repeat: no-repeat;
+        border-radius: 4px; border: 1px solid rgba(255,255,255,0.2);
+        box-sizing: border-box; cursor: pointer;
     }
-    
-    .tile.selected { border: 2px solid #00f2fe; box-shadow: 0 0 10px #00f2fe; z-index: 2; transform: scale(1.05); }
-    .tile.wrong { border: 2px solid #ff4b2b !important; animation: shake 0.2s; }
-    .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
-    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+    .tile.selected { border: 2px solid #00f2fe; box-shadow: 0 0 10px #00f2fe; z-index: 10; }
+    .tile.matched { opacity: 0; pointer-events: none; }
 
-    .timer-container { width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 10px 0; border: 1px solid #00f2fe; overflow: hidden; }
-    #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
-
-    .controls-wrapper { position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; display: flex; justify-content: center; gap: 5px; }
-    .btn-small { padding: 6px 10px; background: rgba(0, 0, 0, 0.7); border: 1px solid #444; border-radius: 15px; color: white; cursor: pointer; font-size: 0.7rem; }
-
-    /* MODAL */
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-    .modal-content { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; border: 1px solid #00f2fe; }
-    
-    #leaderboard-list { text-align: left; width: 100%; margin: 15px 0; max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
-    .score-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-
-    #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+    .timer-container { width: 200px; height: 8px; background: rgba(0,0,0,0.3); border-radius: 10px; margin: 10px 0; border: 1px solid #00f2fe; overflow: hidden; }
+    #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 0.3s; }
 </style>
 </head>
 <body>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pikachu Legend 2026</title>
+    <title>Pikachu Legend 2026 1</title>
     <style>
         :root { --tile-w: 42px; --tile-h: 54px; --cols: 4; --rows: 4; }
         @media (min-width: 768px) { :root { --tile-w: 50px; --tile-h: 65px; } }
@@ -12,12 +12,11 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             background: #000 url('background.jpg') no-repeat center center fixed;
             background-size: cover; font-family: 'Segoe UI', sans-serif; color: white;
-            overflow: hidden; /* Chống cuộn toàn trang để tập trung cuộn bảng game */
+            overflow: hidden; touch-action: none;
         }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1; }
 
-        /* BỐ CỤC MỚI: ĐƯA NÚT LÊN TRÊN */
         #game-view { 
             position: relative; z-index: 5; 
             display: none; flex-direction: column; 
@@ -25,47 +24,50 @@
         }
 
         .header-controls {
-            padding: 10px; background: rgba(0,0,0,0.8);
+            padding: 10px; background: rgba(0,0,0,0.9);
             border-bottom: 2px solid #00f2fe;
             display: flex; flex-direction: column; align-items: center; gap: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
-        .stats { display: flex; gap: 15px; font-weight: bold; font-size: 0.9rem; }
+        .stats { display: flex; gap: 15px; font-weight: bold; font-size: 0.9rem; color: #00f2fe; }
         .btn-group { display: flex; gap: 8px; margin-top: 5px; }
         
-        /* VÙNG CUỘN CHO BẢNG GAME */
+        /* VÙNG CUỘN SIÊU RỘNG (SUPER SCROLL) */
         .game-container {
-            flex: 1; overflow: auto; /* Cho phép trượt/cuộn */
-            display: flex; justify-content: center; align-items: flex-start;
-            padding: 20px 10px; -webkit-overflow-scrolling: touch;
+            flex: 1; overflow: auto;
+            display: block; /* Đổi sang block để cuộn mượt hơn */
+            padding: 100px 50px; /* Thêm đệm cực lớn để trượt thoải mái qua khung */
+            -webkit-overflow-scrolling: touch;
+            text-align: center;
         }
 
         #game-board {
-            display: grid;
+            display: inline-grid; /* Để bảng nằm giữa khi cuộn */
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
             gap: 3px; 
             background: rgba(255, 255, 255, 0.05);
-            padding: 10px; border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            padding: 15px; border-radius: 10px;
+            border: 1px solid rgba(0,242,254,0.3);
         }
 
         .tile { 
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; background-repeat: no-repeat;
             border-radius: 4px; border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; box-sizing: border-box; 
-            transition: transform 0.2s, opacity 0.3s;
+            cursor: pointer; box-sizing: border-box;
+            transition: opacity 0.2s; /* Chỉ dùng transition mờ đi, bỏ scale để tránh dính ảnh */
         }
-        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 15px #fdfc47; z-index: 10; transform: scale(1.1); }
-        .tile.matched { opacity: 0; pointer-events: none; visibility: hidden; }
+        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; z-index: 10; }
+        .tile.matched { opacity: 0 !important; pointer-events: none; visibility: hidden; }
 
         .timer-container { width: 150px; height: 6px; background: #222; border-radius: 10px; border: 1px solid #00f2fe; overflow: hidden; }
         #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
-        .btn-s { padding: 8px 12px; background: #333; border: 1px solid #00f2fe; color: white; border-radius: 15px; font-size: 0.75rem; cursor: pointer; }
+        .btn-s { padding: 8px 12px; background: #222; border: 1px solid #00f2fe; color: white; border-radius: 15px; font-size: 0.75rem; cursor: pointer; }
+        .btn-s:active { background: #00f2fe; color: black; }
 
-        /* MODAL */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
         .menu-btn { width: 100%; padding: 12px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; cursor: pointer; }
@@ -114,22 +116,22 @@
     </div>
 
     <script>
-        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; // Bạn nhớ điền token thật nhé
+        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
         const G_REPO = 'locvitinh-blip/chill';
 
         const levels = [
             { c: 4, r: 5, t: 120, g: "none" },
-            { c: 6, r: 7, t: 180, g: "left" },
-            { c: 8, r: 8, t: 300, g: "right" },
-            { c: 8, r: 10, t: 450, g: "split" },
-            { c: 10, r: 12, t: 600, g: "center" }
+            { c: 6, r: 8, t: 180, g: "left" },
+            { c: 8, r: 10, t: 300, g: "right" },
+            { c: 8, r: 12, t: 450, g: "split" },
+            { c: 10, r: 14, t: 600, g: "center" }
         ];
 
         let curLv = 0, score = 0, name = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
         function initGame() {
-            name = document.getElementById('p-name').value || "Dâu Ry";
+            name = document.getElementById('p-name').value || "Yến Lộc";
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-view').style.display = 'flex';
             loadLevel();
@@ -175,7 +177,7 @@
         }
 
         function clickTile(r, c) {
-            if (isProcessing || board[r][c] === -1) return; // Khóa click khi đang xử lý
+            if (isProcessing || board[r][c] === -1) return;
 
             const tileEl = document.getElementById(`t-${r}-${c}`);
             
@@ -189,9 +191,15 @@
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
-                isProcessing = true; // Khóa bảng
+                isProcessing = true;
                 const [a, b] = selected;
                 if(a.id === b.id) {
+                    // FIX DÍNH ẢNH: Ẩn phần tử ngay lập tức trước khi dạt
+                    const elA = document.getElementById(`t-${a.r}-${a.c}`);
+                    const elB = document.getElementById(`t-${b.r}-${b.c}`);
+                    elA.classList.add('matched');
+                    elB.classList.add('matched');
+
                     setTimeout(() => {
                         board[a.r][a.c] = board[b.r][b.c] = -1;
                         score += 100; document.getElementById('sc').innerText = score;
@@ -203,17 +211,17 @@
                         } else {
                             setTimeout(() => {
                                 checkDeadlock();
-                                isProcessing = false; // Mở khóa bảng
-                            }, 500);
+                                isProcessing = false;
+                            }, 400);
                         }
-                    }, 200);
+                    }, 150);
                 } else {
                     score = Math.max(0, score - 5);
                     document.getElementById('sc').innerText = score;
                     setTimeout(() => {
                         document.getElementById(`t-${a.r}-${a.c}`).classList.remove('selected');
                         document.getElementById(`t-${b.r}-${b.c}`).classList.remove('selected');
-                        isProcessing = false; // Mở khóa bảng
+                        isProcessing = false;
                     }, 300);
                 }
                 selected = [];
@@ -235,9 +243,7 @@
                     let mid = Math.floor(active.length / 2);
                     active.slice(0, mid).forEach((id, i) => nextRow[i] = id);
                     active.slice(mid).forEach((id, i) => nextRow[row.length - (active.length - mid) + i] = id);
-                } else {
-                    nextRow = row; // None
-                }
+                } else { nextRow = row; }
                 board[r] = nextRow;
             });
             refreshUI();
@@ -247,13 +253,14 @@
             board.forEach((row, r) => {
                 row.forEach((id, c) => {
                     const tile = document.getElementById(`t-${r}-${c}`);
+                    tile.classList.remove('selected');
                     if (id === -1) {
                         tile.classList.add('matched');
+                        tile.style.backgroundImage = 'none'; // Xóa hẳn ảnh để không bị dính
                     } else {
                         tile.classList.remove('matched');
                         tile.style.backgroundImage = `url('${imgs[id]}')`;
                     }
-                    tile.classList.remove('selected');
                 });
             });
         }
@@ -270,10 +277,10 @@
 
             if(!canMove) {
                 if(shuffles > 0) {
-                    alert("Hết nước đi! Tự động trộn hình...");
+                    alert("Không còn nước đi, tự động trộn hình!");
                     shuffleLogic(true);
                 } else {
-                    alert("THUA CUỘC! Hết nước đi và lượt trộn.");
+                    alert("THUA CUỘC!");
                     location.reload();
                 }
             }
@@ -292,14 +299,14 @@
         }
 
         function shuffleBtn() { if(!isProcessing && shuffles > 0) shuffleLogic(false); }
-        function nextLevel() { score += 1000; curLv < 4 ? (curLv++, loadLevel()) : (alert("PHÁ ĐẢO!"), location.reload()); }
+        function nextLevel() { score += 1000; curLv < 4 ? (curLv++, loadLevel()) : (alert("BẠN LÀ HUYỀN THOẠI!"), location.reload()); }
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
         function toggleMusic() { const m = document.getElementById('bg-music'); m.paused ? m.play() : m.pause(); }
 
         async function showLeaderboard() {
             const list = document.getElementById('score-list');
             document.getElementById('score-modal').style.display = 'flex';
-            list.innerHTML = "Đang tải dữ liệu...";
+            list.innerHTML = "Đang tải...";
             try {
                 const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all`);
                 const data = await res.json();

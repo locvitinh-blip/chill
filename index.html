@@ -5,97 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Yến Lộc - Chơi cùng các con</title>
     <style>
-        /* Tối ưu hóa tỷ lệ ô cho cả điện thoại và máy tính */
-        :root { 
-            --tile-w: 12vw; 
-            --tile-h: calc(var(--tile-w) * 1.2); /* Giữ tỷ lệ ảnh 1.2 giống ảnh Pikachu gốc */
-            --cols: 4; 
-            --rows: 5; 
+    /* --- CỐ ĐỊNH KÍCH THƯỚC Ô GIỐNG PIKACHU CỔ ĐIỂN --- */
+    :root { 
+        /* Kích thước ô chuẩn trên điện thoại */
+        --tile-w: 45px; 
+        --tile-h: 56px; 
+        --cols: 4; 
+        --rows: 5; 
+    }
+
+    /* Trên máy tính hoặc màn hình lớn, ô vẫn giữ kích thước chuẩn, không bị to ra */
+    @media (min-width: 600px) {
+        :root {
+            --tile-w: 55px; 
+            --tile-h: 70px;
         }
+    }
 
-        /* Khi màn hình lớn (Máy tính), dùng đơn vị px để không bị giãn */
-        @media (min-width: 768px) { 
-            :root { 
-                --tile-w: 60px; 
-                --tile-h: 75px; 
-            } 
-        }
+    body, html {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background: #000 url('background.jpg') no-repeat center center fixed;
+        background-size: cover; font-family: 'Segoe UI', sans-serif;
+        touch-action: none; color: white;
+    }
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-            background: #000 url('background.jpg') no-repeat center center fixed;
-            background-size: cover; font-family: 'Segoe UI', sans-serif;
-            touch-action: none; color: white;
-        }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1; }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1; }
+    /* MENU CHÍNH */
+    #main-menu {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        z-index: 10; text-align: center; width: 90%; max-width: 400px;
+        display: flex; flex-direction: column; gap: 20px;
+    }
+    .logo-title { 
+        font-size: 3rem; font-weight: 900; color: #00f2fe; 
+        text-shadow: 0 0 20px #00f2fe; margin-bottom: 20px; letter-spacing: 5px; 
+    }
+    
+    .menu-btn {
+        padding: 15px; background: rgba(255, 255, 255, 0.1); border: 2px solid #00f2fe;
+        border-radius: 50px; color: white; font-size: 1.2rem; font-weight: bold;
+        cursor: pointer; transition: 0.3s; backdrop-filter: blur(10px);
+    }
+    .menu-btn:hover { background: #00f2fe; color: black; box-shadow: 0 0 30px #00f2fe; }
 
-        /* MENU CHÍNH */
-        #main-menu {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 10; text-align: center; width: 90%; max-width: 400px;
-            display: flex; flex-direction: column; gap: 20px;
-        }
-        .logo-title { 
-            font-size: clamp(2rem, 10vw, 3.5rem); font-weight: 900; color: #00f2fe; 
-            text-shadow: 0 0 20px #00f2fe; margin-bottom: 20px; letter-spacing: 8px; 
-        }
-        
-        .menu-btn {
-            padding: 15px; background: rgba(255, 255, 255, 0.1); border: 2px solid #00f2fe;
-            border-radius: 50px; color: white; font-size: 1.2rem; font-weight: bold;
-            cursor: pointer; transition: 0.3s; backdrop-filter: blur(10px);
-        }
-        .menu-btn:hover { background: #00f2fe; color: black; box-shadow: 0 0 30px #00f2fe; }
+    /* GIAO DIỆN CHƠI */
+    #game-view { display: none; position: relative; z-index: 5; width: 100%; height: 100%; }
+    
+    #game-container {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        display: flex; flex-direction: column; align-items: center; width: 100%;
+        max-height: 95vh; /* Không cho vượt quá chiều cao màn hình */
+    }
 
-        /* GAME VIEW */
-        #game-view { display: none; position: relative; z-index: 5; width: 100%; height: 100%; }
-        #game-container {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            display: flex; flex-direction: column; align-items: center; width: 100%;
-        }
+    #game-board {
+        display: grid; 
+        grid-template-columns: repeat(var(--cols), var(--tile-w));
+        grid-template-rows: repeat(var(--rows), var(--tile-h));
+        gap: 2px; /* Khoảng cách nhỏ giữa các ô giống bản gốc */
+        padding: 5px; 
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px); 
+        border-radius: 8px; 
+        border: 1px solid rgba(255,255,255,0.3);
+        /* Tự động cuộn nếu bảng quá to so với màn hình điện thoại cũ */
+        overflow: auto; 
+    }
 
-        .timer-container { width: 80%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 10px 0; border: 1px solid #00f2fe; overflow: hidden; }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
+    .tile { 
+        width: var(--tile-w); 
+        height: var(--tile-h); 
+        background-size: 100% 100%; /* Ảnh phủ kín ô */
+        background-repeat: no-repeat;
+        background-position: center; 
+        border-radius: 3px; 
+        cursor: pointer; 
+        border: 1px solid rgba(255,255,255,0.1); /* Viền mờ bao quanh mỗi ô */
+        box-sizing: border-box;
+    }
+    
+    .tile.selected { border: 2px solid #00f2fe; box-shadow: 0 0 10px #00f2fe; z-index: 2; transform: scale(1.05); }
+    .tile.wrong { border: 2px solid #ff4b2b !important; animation: shake 0.2s; }
+    .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        #game-board {
-            display: grid; 
-            grid-template-columns: repeat(var(--cols), var(--tile-w));
-            grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 4px; padding: 10px; background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px); border-radius: 10px; border: 1px solid rgba(255,255,255,0.3);
-            margin: 0 auto;
-        }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 
-        .tile { 
-            width: var(--tile-w); 
-            height: var(--tile-h); 
-            background-size: 100% 100%; /* Ép ảnh vừa khít 100% ô */
-            background-repeat: no-repeat;
-            background-position: center; 
-            border-radius: 4px; cursor: pointer; border: 1.5px solid transparent;
-            box-sizing: border-box; /* Quan trọng để border không làm nở ô */
-        }
-        .tile.selected { border-color: #00f2fe; box-shadow: 0 0 15px #00f2fe; transform: scale(1.05); z-index: 2; }
-        .tile.wrong { border-color: #ff4b2b !important; animation: shake 0.3s; }
-        .tile.matched { opacity: 0; visibility: hidden; pointer-events: none; }
+    .timer-container { width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 10px 0; border: 1px solid #00f2fe; overflow: hidden; }
+    #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    .controls-wrapper { position: fixed; bottom: 10px; left: 0; right: 0; z-index: 100; display: flex; justify-content: center; gap: 5px; }
+    .btn-small { padding: 6px 10px; background: rgba(0, 0, 0, 0.7); border: 1px solid #444; border-radius: 15px; color: white; cursor: pointer; font-size: 0.7rem; }
 
-        .controls-wrapper { position: fixed; bottom: 15px; left: 0; right: 0; z-index: 100; display: flex; justify-content: center; gap: 8px; }
-        .btn-small { padding: 8px 12px; background: rgba(0, 0, 0, 0.6); border: 1px solid #444; border-radius: 20px; color: white; cursor: pointer; font-size: 0.75rem; }
+    /* MODAL */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+    .modal-content { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; border: 1px solid #00f2fe; }
+    
+    #leaderboard-list { text-align: left; width: 100%; margin: 15px 0; max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
+    .score-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
-        /* MODAL */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal-content { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; border: 1px solid #00f2fe; }
-        
-        #leaderboard-list { text-align: left; width: 100%; margin: 15px 0; max-height: 250px; overflow-y: auto; }
-        .score-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-
-        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
-        .butterfly { position: absolute; pointer-events: none; }
-        @keyframes fly-right { 0% { left: -50px; top: var(--t); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 110vw; top: var(--et); opacity: 0; } }
-    </style>
+    #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+</style>
 </head>
 <body>
 

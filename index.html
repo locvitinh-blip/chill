@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pikachu Pro 2026</title>
+    <title>Pikachu Pro 2026 - Yên Lộc</title>
     <style>
         :root { --tile-w: 44px; --tile-h: 56px; --cols: 6; --rows: 4; }
         body, html {
@@ -38,8 +38,8 @@
         .btn-s { padding: 8px 12px; background: #111; border: 1px solid #00f2fe; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
-        .input-name { width: 100%; padding: 10px; margin: 15px 0; border-radius: 5px; text-align: center; box-sizing: border-box; }
-        .menu-btn { width: 100%; padding: 12px; background: #00f2fe; color: #000; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; }
+        .input-name { width: 100%; padding: 10px; margin: 15px 0; border-radius: 5px; text-align: center; box-sizing: border-box; background: #333; color: #fff; border: 1px solid #444; }
+        .menu-btn { width: 100%; padding: 12px; background: #00f2fe; color: #000; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -52,6 +52,15 @@
             <input type="text" id="p-name" class="input-name" placeholder="Nhập tên..." maxlength="10">
             <button class="menu-btn" onclick="initGame()">CHƠI NGAY</button>
             <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">XẾP HẠNG</button>
+        </div>
+    </div>
+
+    <div id="score-modal" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h3 style="color:#fdfc47; margin-top:0;">🏆 BẢNG VÀNG 🏆</h3>
+            <div id="score-list" style="text-align: left; max-height: 250px; overflow-y: auto; margin-bottom: 15px; font-size: 14px; color: #ddd;">
+            </div>
+            <button class="menu-btn" onclick="document.getElementById('score-modal').style.display='none'">ĐÓNG</button>
         </div>
     </div>
 
@@ -76,21 +85,20 @@
     </div>
 
     <script>
-        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
+        const G_TOKEN = 'ghp_'+'7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
         const G_REPO = 'locvitinh-blip/chill';
 
-        // 10 MÀN CHƠI VỚI CÁC KIỂU DẠT HÌNH KHÁC NHAU
         const levels = [
-            { c: 6, r: 4, t: 120, g: 'none' },  // Màn 1: Đứng yên
-            { c: 6, r: 4, t: 110, g: 'down' },  // Màn 2: Dạt xuống
-            { c: 6, r: 6, t: 150, g: 'left' },  // Màn 3: Dạt trái
-            { c: 6, r: 6, t: 140, g: 'up' },    // Màn 4: Dạt lên
-            { c: 8, r: 6, t: 180, g: 'right' }, // Màn 5: Dạt phải
-            { c: 8, r: 6, t: 170, g: 'down' },  // Màn 6
-            { c: 8, r: 7, t: 200, g: 'left' },  // Màn 7
-            { c: 8, r: 8, t: 250, g: 'up' },    // Màn 8
-            { c: 8, r: 8, t: 220, g: 'right' }, // Màn 9
-            { c: 8, r: 9, t: 300, g: 'down' }   // Màn 10
+            { c: 6, r: 4, t: 120, g: 'none' },
+            { c: 6, r: 4, t: 110, g: 'down' },
+            { c: 6, r: 6, t: 150, g: 'left' },
+            { c: 6, r: 6, t: 140, g: 'up' },
+            { c: 8, r: 6, t: 180, g: 'right' },
+            { c: 8, r: 6, t: 170, g: 'down' },
+            { c: 8, r: 7, t: 200, g: 'left' },
+            { c: 8, r: 8, t: 250, g: 'up' },
+            { c: 8, r: 8, t: 220, g: 'right' },
+            { c: 8, r: 9, t: 300, g: 'down' }
         ];
 
         let curLv = 0, score = 0, pName = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
@@ -168,10 +176,14 @@
                     score += 100; document.getElementById('sc').innerText = score;
                     matched += 2;
                     setTimeout(() => {
-                        applyGravity(); // ÁP DỤNG DẠT HÌNH
+                        applyGravity();
                         renderBoard();
                         if(matched === levels[curLv].c * levels[curLv].r) {
-                            curLv < levels.length - 1 ? (curLv++, loadLevel()) : alert("PHÁ ĐẢO!");
+                            if(curLv < levels.length - 1) {
+                                curLv++; loadLevel();
+                            } else {
+                                saveScore(); alert("PHÁ ĐẢO TUYỆT ĐỐI!"); location.reload();
+                            }
                         }
                         isProcessing = false;
                     }, 300);
@@ -186,7 +198,6 @@
             const mode = levels[curLv].g;
             const rows = levels[curLv].r;
             const cols = levels[curLv].c;
-
             if(mode === 'down') {
                 for(let c=0; c<cols; c++) {
                     let temp = [];
@@ -229,7 +240,33 @@
 
         function shuffleBtn() { if(shuffles > 0) shuffleLogic(); }
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
-        function gameOver() { alert("HẾT GIỜ!"); location.reload(); }
+        function gameOver() { saveScore(); alert("HẾT GIỜ! Điểm: " + score); location.reload(); }
+
+        // --- HỆ THỐNG XẾP HẠNG GITHUB ---
+        async function showLeaderboard() {
+            const list = document.getElementById('score-list');
+            document.getElementById('score-modal').style.display = 'flex';
+            list.innerHTML = "<p style='text-align:center;'>Đang tải...</p>";
+            try {
+                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all&per_page=10`, {
+                    headers: { 'Authorization': `token ${G_TOKEN}` }
+                });
+                const data = await res.json();
+                if (data.length === 0) list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>";
+                else list.innerHTML = data.map(i => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>👤 ${i.body}</span><b>${i.title.replace('SCORE: ','')}đ</b></div>`).join('');
+            } catch (e) { list.innerHTML = "<p style='text-align:center;color:red;'>Lỗi tải bảng điểm!</p>"; }
+        }
+
+        async function saveScore() {
+            if (score <= 0) return;
+            try {
+                await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `${pName}` })
+                });
+            } catch(e) { console.error("Lỗi lưu điểm"); }
+        }
     </script>
 </body>
 </html>

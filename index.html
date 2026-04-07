@@ -3,66 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yên Lộc - Pikachu Pro Max</title>
+    <title>Yên Lộc - Pikachu Legend 2026</title>
     <style>
-        :root { --tile-w: 42px; --tile-h: 52px; --cols: 6; --rows: 4; }
+        :root { --tile-w: 45px; --tile-h: 58px; --cols: 6; --rows: 4; }
 
         body, html {
             margin: 0; padding: 0; width: 100vw; height: 100vh;
             background: #000 url('background.jpg') no-repeat center center fixed;
             background-size: cover; font-family: 'Segoe UI', sans-serif;
-            overflow: hidden; color: white; display: flex; flex-direction: column;
+            overflow: hidden; color: white;
         }
 
-        /* --- CHẾ ĐỘ XOAY TOÀN WEB --- */
+        /* --- CHẾ ĐỘ XOAY TOÀN WEB (CẢI TIẾN) --- */
         body.rotated-web {
             width: 100vh !important;
             height: 100vw !important;
-            position: absolute;
+            position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%) rotate(90deg);
             transform-origin: center center;
         }
 
-        #game-view { display: none; flex-direction: column; width: 100%; height: 100%; }
-
-        .header-controls {
-            padding: 10px; background: rgba(0,0,0,0.95);
-            border-bottom: 2px solid #00f2fe;
-            display: flex; justify-content: space-around; align-items: center;
+        #game-view { 
+            display: none; width: 100%; height: 100%; 
+            flex-direction: column; position: relative;
         }
 
-        .stats { font-weight: bold; font-size: 0.85rem; color: #00f2fe; }
+        .header-controls {
+            padding: 10px 5px; background: rgba(0,0,0,0.9);
+            border-bottom: 2px solid #00f2fe;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100;
+        }
+
+        .stats-box { font-weight: bold; font-size: 0.9rem; color: #00f2fe; text-shadow: 0 0 5px #000; }
 
         .game-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
-            overflow: hidden;
+            padding: 10px; box-sizing: border-box;
         }
 
         #game-board {
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 2px; padding: 10px; background: rgba(255,255,255,0.1);
-            border-radius: 8px; border: 1px solid rgba(0,242,254,0.3);
+            gap: 3px; padding: 10px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px; border: 1px solid rgba(0,242,254,0.4);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
         .tile { 
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; border-radius: 4px;
             border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; transition: transform 0.1s;
+            cursor: pointer; transition: 0.1s;
         }
-        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; transform: scale(1.05); }
+        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; transform: scale(1.05); z-index: 2; }
         .tile.matched { opacity: 0 !important; pointer-events: none; visibility: hidden; }
 
-        .timer-bg { width: 120px; height: 6px; background: #222; border-radius: 10px; border: 1px solid #00f2fe; overflow: hidden; }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
+        .btn-action {
+            padding: 8px 12px; background: linear-gradient(180deg, #333, #000);
+            border: 1px solid #00f2fe; color: white; border-radius: 8px;
+            font-size: 11px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .btn-action:active { background: #00f2fe; color: #000; }
 
-        .btn-s { padding: 8px 12px; background: #222; border: 1px solid #00f2fe; color: white; border-radius: 5px; font-size: 11px; cursor: pointer; }
+        .timer-bg { width: 100px; height: 8px; background: #222; border-radius: 10px; border: 1px solid #00f2fe; overflow: hidden; }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; box-shadow: 0 0 10px #00f2fe; }
 
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
+        /* MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
+        .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 280px; }
+        .input-name { width: 100%; padding: 12px; margin: 15px 0; border-radius: 10px; border: none; text-align: center; font-weight: bold; }
         .menu-btn { width: 100%; padding: 12px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
@@ -73,32 +86,35 @@
     <div id="start-screen" class="modal">
         <div class="modal-box">
             <h1 style="color:#00f2fe; margin:0;">YÊN LỘC</h1>
-            <p style="font-size: 11px; color: #888;">LỘC VI TÍNH - PIKACHU 2026</p>
-            <input type="text" id="p-name" placeholder="Tên bạn..." maxlength="10" style="width:80%; padding:10px; margin:15px 0; text-align:center; border-radius:5px; border:none;">
-            <button class="menu-btn" onclick="initGame()">VÀO GAME</button>
+            <p style="font-size: 12px; color: #aaa; margin-bottom: 20px;">LỘC VI TÍNH - PIKACHU 2026</p>
+            <input type="text" id="p-name" class="input-name" placeholder="NHẬP TÊN BẠN..." maxlength="10">
+            <button class="menu-btn" onclick="initGame()">VÀO TRÒ CHƠI</button>
+            <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">BẢNG ĐIỂM</button>
         </div>
     </div>
 
     <div id="game-view">
         <div class="header-controls">
-            <div class="stats">LV <span id="lv">1</span> | <span id="sc">0</span>đ</div>
+            <div class="stats-box">LV <span id="lv">1</span></div>
             <div class="timer-bg"><div id="timer-bar"></div></div>
-            <button class="btn-s" onclick="toggleFullLandscape()">XOAY FULL</button>
-            <button class="btn-s" onclick="shuffleBtn()">TRỘN</button>
-            <button class="btn-s" onclick="location.reload()">MENU</button>
+            <div class="stats-box"><span id="sc">0</span>đ</div>
+            <button class="btn-action" onclick="toggleFullLandscape()">XOAY FULL</button>
+            <button class="btn-action" onclick="shuffleBtn()">TRỘN</button>
+            <button class="btn-action" onclick="location.reload()">MENU</button>
         </div>
+        
         <div class="game-container">
             <div id="game-board"></div>
         </div>
     </div>
 
     <script>
-        // --- CẤU HÌNH TOKEN ---
-        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
-        const G_REPO = 'locvitinh-blip/chill';
+        // --- THÔNG TIN CỦA BẠN (ĐIỀN VÀO ĐÂY) ---
+        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
+        const G_REPO = 'locvitinh-blip/chill'; 
 
         const levels = [
-            { c: 6, r: 4, t: 150 }, // Màn 1 xoay ngang cực đẹp
+            { c: 6, r: 4, t: 150 }, // Màn 1: 6x4 (Ngang cực đẹp)
             { c: 8, r: 5, t: 200 },
             { c: 10, r: 6, t: 300 }
         ];
@@ -106,16 +122,13 @@
         let curLv = 0, score = 0, name = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
-        // HÀM QUAN TRỌNG: XOAY VÀ FULLSCREEN
+        // HÀM XOAY TOÀN WEB VÀ FULLSCREEN
         function toggleFullLandscape() {
             const body = document.getElementById('main-body');
             body.classList.toggle('rotated-web');
 
-            // Yêu cầu Fullscreen
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log("Không thể vào chế độ toàn màn hình");
-                });
+                document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen blocked"));
             } else {
                 document.exitFullscreen();
             }
@@ -134,8 +147,14 @@
             document.getElementById('lv').innerText = curLv + 1;
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
+            
             timeLeft = lv.t; updateBar();
-            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft <= 0) location.reload(); }, 1000);
+            timer = setInterval(() => { 
+                timeLeft--; 
+                updateBar(); 
+                if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); } 
+            }, 1000);
+            
             matched = 0; shuffles = 3; isProcessing = false;
             generateBoard();
         }
@@ -145,8 +164,10 @@
             let pairs = [];
             for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
             pairs.sort(() => Math.random() - 0.5);
+            
             const container = document.getElementById('game-board');
             container.innerHTML = ''; board = [];
+
             for(let r=0; r<lv.r; r++) {
                 board[r] = [];
                 for(let c=0; c<lv.c; c++) {
@@ -164,23 +185,31 @@
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
             const tileEl = document.getElementById(`t-${r}-${c}`);
+            
+            if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
+                tileEl.classList.remove('selected'); selected = []; return;
+            }
+
             tileEl.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
                 isProcessing = true;
                 const [a, b] = selected;
-                if(a.id === b.id && (a.r !== b.r || a.c !== b.c)) {
+                if(a.id === b.id) {
                     document.getElementById(`t-${a.r}-${a.c}`).classList.add('matched');
                     document.getElementById(`t-${b.r}-${b.c}`).classList.add('matched');
-                    board[a.r][a.c] = -1; board[b.r][b.c] = -1;
-                    score += 100; document.getElementById('sc').innerText = score;
-                    matched += 2;
-                    if(matched === levels[curLv].c * levels[curLv].r) {
-                        curLv < levels.length - 1 ? (curLv++, setTimeout(loadLevel, 500)) : alert("CHIẾN THẮNG!");
-                    } else {
-                        setTimeout(() => { checkDeadlock(); isProcessing = false; }, 400);
-                    }
+                    setTimeout(() => {
+                        board[a.r][a.c] = -1; board[b.r][b.c] = -1;
+                        score += 100; document.getElementById('sc').innerText = score;
+                        matched += 2;
+                        if(matched === levels[curLv].c * levels[curLv].r) {
+                            if(curLv < levels.length - 1) { curLv++; loadLevel(); }
+                            else { alert("XUẤT SẮC! PHÁ ĐẢO!"); location.reload(); }
+                        } else {
+                            setTimeout(() => { checkDeadlock(); isProcessing = false; }, 300);
+                        }
+                    }, 200);
                 } else {
                     setTimeout(() => {
                         document.getElementById(`t-${a.r}-${a.c}`).classList.remove('selected');
@@ -195,14 +224,12 @@
         function checkDeadlock() {
             let active = [];
             board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
+            if (active.length === 0) return;
             let counts = {};
             active.forEach(id => counts[id] = (counts[id] || 0) + 1);
             let hasPairs = false;
             for(let id in counts) { if(counts[id] >= 2) { hasPairs = true; break; } }
-            if(!hasPairs && active.length > 0) {
-                if(shuffles > 0) shuffleLogic(true);
-                else { alert("Hết nước đi!"); location.reload(); }
-            }
+            if(!hasPairs) shuffleLogic(true);
         }
 
         function shuffleLogic(auto) {
@@ -212,14 +239,11 @@
             board.forEach((row, r) => {
                 row.forEach((id, c) => { if(board[r][c] !== -1) board[r][c] = currentImgs.pop(); });
             });
-            if(!auto) { shuffles--; }
+            if(!auto) shuffles--;
             board.forEach((row, r) => {
                 row.forEach((id, c) => {
                     const tile = document.getElementById(`t-${r}-${c}`);
-                    if (id !== -1) {
-                        tile.style.backgroundImage = `url('${imgs[id]}')`;
-                        tile.classList.remove('matched');
-                    }
+                    if (id !== -1) tile.style.backgroundImage = `url('${imgs[id]}')`;
                 });
             });
         }

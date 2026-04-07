@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pikachu Legend 2026 2</title>
+    <title>Pikachu Legend 2026 1</title>
     <style>
         :root { --tile-w: 42px; --tile-h: 54px; --cols: 4; --rows: 4; }
         @media (min-width: 768px) { :root { --tile-w: 50px; --tile-h: 65px; } }
@@ -23,7 +23,7 @@
         }
 
         .header-controls {
-            padding: 10px; background: rgba(0,0,0,0.9);
+            padding: 10px; background: rgba(0,0,0,0.95);
             border-bottom: 2px solid #00f2fe;
             display: flex; flex-direction: column; align-items: center; gap: 5px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
@@ -34,7 +34,7 @@
         
         .game-container {
             flex: 1; overflow: auto; display: block;
-            padding: 120px 50px; /* Vùng trượt cực rộng để không bị vướng nút */
+            padding: 100px 40px; 
             -webkit-overflow-scrolling: touch; text-align: center;
         }
 
@@ -50,7 +50,7 @@
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; background-repeat: no-repeat;
             border-radius: 4px; border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; box-sizing: border-box; transition: opacity 0.2s;
+            cursor: pointer; box-sizing: border-box;
         }
         .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; z-index: 10; }
         .tile.matched { opacity: 0 !important; pointer-events: none; visibility: hidden; }
@@ -73,7 +73,7 @@
     <div id="start-screen" class="modal">
         <div class="modal-box">
             <h1 style="color:#00f2fe;">DÂU - RY</h1>
-            <input type="text" id="p-name" placeholder="Tên bạn..." maxlength="10" style="width:90%; padding:10px; margin-bottom:10px; border-radius:8px; text-align:center;">
+            <input type="text" id="p-name" placeholder="Tên của bạn..." maxlength="10" style="width:90%; padding:10px; margin-bottom:10px; border-radius:8px; text-align:center; background:#333; color:white; border:1px solid #00f2fe;">
             <button class="menu-btn" onclick="initGame()">VÀO GAME</button>
             <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">BẢNG XẾP HẠNG</button>
         </div>
@@ -108,7 +108,6 @@
         // --- CHỖ NHẬP TOKEN CỦA BẠN ---
         const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
         const G_REPO = 'locvitinh-blip/chill'; 
-        // ------------------------------
 
         const levels = [
             { c: 4, r: 5, t: 120, g: "none" },
@@ -136,7 +135,12 @@
             document.documentElement.style.setProperty('--rows', lv.r);
             timeLeft = lv.t; updateBar();
             timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); } }, 1000);
-            matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
+            
+            matched = 0;
+            shuffles = 3; 
+            document.getElementById('sh-count').innerText = shuffles;
+            isProcessing = false; // QUAN TRỌNG: Giải phóng khóa khi qua màn
+            selected = [];
             generateBoard();
         }
 
@@ -145,8 +149,11 @@
             let pairs = [];
             for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
             pairs.sort(() => Math.random() - 0.5);
+            
             const container = document.getElementById('game-board');
-            container.innerHTML = ''; board = [];
+            container.innerHTML = ''; 
+            board = [];
+
             for(let r=0; r<lv.r; r++) {
                 board[r] = [];
                 for(let c=0; c<lv.c; c++) {
@@ -158,15 +165,17 @@
                     container.appendChild(tile);
                 }
             }
-            setTimeout(checkDeadlock, 1000);
+            setTimeout(checkDeadlock, 500);
         }
 
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
+            
             const tileEl = document.getElementById(`t-${r}-${c}`);
             if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
                 tileEl.classList.remove('selected'); selected = []; return;
             }
+
             tileEl.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
@@ -174,16 +183,25 @@
                 isProcessing = true;
                 const [a, b] = selected;
                 if(a.id === b.id) {
+                    // Ẩn ngay lập tức
                     document.getElementById(`t-${a.r}-${a.c}`).classList.add('matched');
                     document.getElementById(`t-${b.r}-${b.c}`).classList.add('matched');
+                    
                     setTimeout(() => {
                         board[a.r][a.c] = board[b.r][b.c] = -1;
                         score += 100; document.getElementById('sc').innerText = score;
                         matched += 2;
                         applyGravity();
-                        if(matched === levels[curLv].c * levels[curLv].r) nextLevel();
-                        else setTimeout(() => { checkDeadlock(); isProcessing = false; }, 500);
-                    }, 200);
+                        
+                        if(matched === levels[curLv].c * levels[curLv].r) {
+                            setTimeout(nextLevel, 300);
+                        } else {
+                            setTimeout(() => {
+                                checkDeadlock();
+                                isProcessing = false; // Giải phóng sau khi dạt xong
+                            }, 400);
+                        }
+                    }, 150);
                 } else {
                     score = Math.max(0, score - 5); document.getElementById('sc').innerText = score;
                     setTimeout(() => {
@@ -198,6 +216,7 @@
 
         function applyGravity() {
             const type = levels[curLv].g;
+            if(type === "none") { refreshUI(); return; }
             board.forEach((row, r) => {
                 let active = row.filter(id => id !== -1);
                 let nextRow = new Array(row.length).fill(-1);
@@ -211,7 +230,7 @@
                     let mid = Math.floor(active.length / 2);
                     active.slice(0, mid).forEach((id, i) => nextRow[i] = id);
                     active.slice(mid).forEach((id, i) => nextRow[row.length - (active.length - mid) + i] = id);
-                } else { nextRow = row; }
+                }
                 board[r] = nextRow;
             });
             refreshUI();
@@ -221,7 +240,6 @@
             board.forEach((row, r) => {
                 row.forEach((id, c) => {
                     const tile = document.getElementById(`t-${r}-${c}`);
-                    tile.classList.remove('selected');
                     if (id === -1) {
                         tile.classList.add('matched');
                         tile.style.backgroundImage = 'none';
@@ -229,27 +247,29 @@
                         tile.classList.remove('matched');
                         tile.style.backgroundImage = `url('${imgs[id]}')`;
                     }
+                    tile.classList.remove('selected');
                 });
             });
         }
 
         function checkDeadlock() {
-            let activeOnBoard = [];
-            board.forEach(row => row.forEach(id => { if(id !== -1) activeOnBoard.push(id); }));
-            if (activeOnBoard.length === 0) return;
+            let active = [];
+            board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
+            if (active.length === 0) return;
+
             let counts = {};
-            activeOnBoard.forEach(id => counts[id] = (counts[id] || 0) + 1);
+            active.forEach(id => counts[id] = (counts[id] || 0) + 1);
+            
             let hasPairs = false;
             for(let id in counts) { if(counts[id] >= 2) { hasPairs = true; break; } }
 
             if(!hasPairs) {
                 if(shuffles > 0) {
-                    alert("Không còn cặp trùng! Đang tự động xáo hình...");
+                    console.log("Deadlock detected, shuffling...");
                     shuffleLogic(true);
                 } else {
-                    alert("THUA CUỘC! Hết nước đi.");
-                    saveScore();
-                    location.reload();
+                    alert("HẾT NƯỚC ĐI!");
+                    saveScore(); location.reload();
                 }
             }
         }
@@ -257,30 +277,39 @@
         function shuffleLogic(auto) {
             let currentImgs = [];
             board.forEach(row => row.forEach(id => { if(id !== -1) currentImgs.push(id); }));
+            
+            // Xáo trộn cho đến khi chắc chắn có ít nhất 1 cặp (nếu số lượng hình > 0)
             currentImgs.sort(() => Math.random() - 0.5);
+            
             board.forEach((row, r) => {
                 row.forEach((id, c) => { if(board[r][c] !== -1) board[r][c] = currentImgs.pop(); });
             });
+            
             if(!auto) { shuffles--; document.getElementById('sh-count').innerText = shuffles; }
             refreshUI();
-            setTimeout(checkDeadlock, 800);
+            
+            // Đợi UI cập nhật rồi kiểm tra lại deadlock lần nữa
+            setTimeout(checkDeadlock, 500);
         }
 
         function shuffleBtn() { if(!isProcessing && shuffles > 0) shuffleLogic(false); }
-        function nextLevel() { score += 1000; curLv < 4 ? (curLv++, loadLevel()) : (alert("XUẤT SẮC!"), location.reload()); }
+        
+        function nextLevel() {
+            if (curLv < levels.length - 1) {
+                curLv++;
+                loadLevel();
+            } else {
+                alert("BẠN ĐÃ PHÁ ĐẢO!");
+                saveScore();
+                location.reload();
+            }
+        }
+
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
         function toggleMusic() { const m = document.getElementById('bg-music'); m.paused ? m.play() : m.pause(); }
 
-        async function saveScore() {
-            try {
-                await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${name}` })
-                });
-            } catch(e) {}
-        }
-
+        async function saveScore() { try { await fetch(`https://api.github.com/repos/${G_REPO}/issues`, { method: 'POST', headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ title: `Điểm: ${score}`, body: `Người chơi: ${name}` }) }); } catch(e) {} }
+        
         async function showLeaderboard() {
             const list = document.getElementById('score-list');
             document.getElementById('score-modal').style.display = 'flex';
@@ -288,8 +317,8 @@
             try {
                 const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all`);
                 const data = await res.json();
-                list.innerHTML = data.slice(0, 5).map(i => `<div>- ${i.body}: ${i.title}</div>`).join('');
-            } catch(e) { list.innerHTML = "Lỗi kết nối GitHub."; }
+                list.innerHTML = data.slice(0, 5).map(i => `<div>${i.body}: ${i.title}</div>`).join('');
+            } catch(e) { list.innerHTML = "Lỗi kết nối."; }
         }
     </script>
 </body>

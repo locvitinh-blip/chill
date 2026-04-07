@@ -34,8 +34,8 @@
         .tile.matched { opacity: 0; pointer-events: none; transform: scale(0); }
         .timer-bg { width: 150px; height: 6px; background: #222; border-radius: 5px; border: 1px solid #00f2fe; }
         #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
-        .btn-row { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-s { padding: 8px 12px; background: #111; border: 1px solid #00f2fe; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+        .btn-s { padding: 8px 12px; background: #111; border: 1px solid #00f2fe; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; }
         .btn-end { border-color: #ff4d4d; color: #ff4d4d; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
@@ -80,7 +80,7 @@
             <div class="btn-row">
                 <button class="btn-s" onclick="shuffleBtn()">TRỘN</button>
                 <button class="btn-s btn-end" onclick="finishGame()">KẾT THÚC</button>
-                <button class="btn-s" id="m-btn" onclick="toggleMusic()">TẮT NHẠC</button>
+                <button class="btn-s" id="m-btn" onclick="toggleMusic()">MỞ NHẠC</button>
                 <button class="btn-s" onclick="location.reload()">MENU</button>
             </div>
         </div>
@@ -163,6 +163,41 @@
             });
         }
 
+        // --- THUẬT TOÁN PIKACHU CHUẨN ---
+        function canConnect(r1, c1, r2, c2) {
+            if (board[r1][c1] !== board[r2][c2] || (r1 === r2 && c1 === c2)) return false;
+            const rows = levels[curLv].r, cols = levels[curLv].c;
+
+            const isRowEmpty = (r, c1, c2) => {
+                for (let c = Math.min(c1, c2) + 1; c < Math.max(c1, c2); c++) if (board[r][c] !== -1) return false;
+                return true;
+            };
+            const isColEmpty = (c, r1, r2) => {
+                for (let r = Math.min(r1, r2) + 1; r < Math.max(r1, r2); r++) if (board[r][c] !== -1) return false;
+                return true;
+            };
+
+            if (r1 === r2 && isRowEmpty(r1, c1, c2)) return true;
+            if (c1 === c2 && isColEmpty(c1, r1, r2)) return true;
+
+            if (board[r1][c2] === -1 && isRowEmpty(r1, c1, c2) && isColEmpty(c2, r1, r2)) return true;
+            if (board[r2][c1] === -1 && isRowEmpty(r2, c1, c2) && isColEmpty(c1, r1, r2)) return true;
+
+            for (let r = -1; r <= rows; r++) {
+                if (r === r1 || r === r2) continue;
+                const b1 = (r === -1 || r === rows) || board[r][c1] === -1;
+                const b2 = (r === -1 || r === rows) || board[r][c2] === -1;
+                if (b1 && b2 && isColEmpty(c1, r1, r) && isColEmpty(c2, r2, r) && (r === -1 || r === rows || isRowEmpty(r, c1, c2))) return true;
+            }
+            for (let c = -1; c <= cols; c++) {
+                if (c === c1 || c === c2) continue;
+                const b1 = (c === -1 || c === cols) || board[r1][c] === -1;
+                const b2 = (c === -1 || c === cols) || board[r2][c] === -1;
+                if (b1 && b2 && isRowEmpty(r1, c1, c) && isRowEmpty(r2, c2, c) && (c === -1 || c === cols || isColEmpty(c, r1, r2))) return true;
+            }
+            return false;
+        }
+
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
             const tiles = document.querySelectorAll('.tile');
@@ -173,7 +208,7 @@
             if(selected.length === 2) {
                 isProcessing = true;
                 const [a, b] = selected;
-                if(a.id === b.id && (a.r !== b.r || a.c !== b.c)) {
+                if(canConnect(a.r, a.c, b.r, b.c)) {
                     board[a.r][a.c] = -1; board[b.r][b.c] = -1;
                     score += 100; document.getElementById('sc').innerText = score;
                     matched += 2;
@@ -181,17 +216,13 @@
                         applyGravity();
                         renderBoard();
                         if(matched === levels[curLv].c * levels[curLv].r) {
-                            if(curLv < levels.length - 1) {
-                                curLv++; loadLevel();
-                            } else {
-                                saveScore(); alert("PHÁ ĐẢO TUYỆT ĐỐI!"); location.reload();
-                            }
+                            if(curLv < levels.length - 1) { curLv++; loadLevel(); }
+                            else { saveScore(); alert("PHÁ ĐẢO!"); location.reload(); }
                         }
                         isProcessing = false;
                     }, 300);
                 } else {
-                    // TRỪ ĐIỂM KHI SAI
-                    score = Math.max(0, score - 20); 
+                    score = Math.max(0, score - 20);
                     document.getElementById('sc').innerText = score;
                     setTimeout(() => { renderBoard(); isProcessing = false; }, 300);
                 }
@@ -200,101 +231,66 @@
         }
 
         function applyGravity() {
-            const mode = levels[curLv].g;
-            const rows = levels[curLv].r;
-            const cols = levels[curLv].c;
+            const mode = levels[curLv].g, rows = levels[curLv].r, cols = levels[curLv].c;
             if(mode === 'down') {
                 for(let c=0; c<cols; c++) {
-                    let temp = [];
-                    for(let r=0; r<rows; r++) if(board[r][c] !== -1) temp.push(board[r][c]);
-                    while(temp.length < rows) temp.unshift(-1);
-                    for(let r=0; r<rows; r++) board[r][c] = temp[r];
+                    let t = []; for(let r=0; r<rows; r++) if(board[r][c]!==-1) t.push(board[r][c]);
+                    while(t.length < rows) t.unshift(-1);
+                    for(let r=0; r<rows; r++) board[r][c] = t[r];
                 }
             } else if(mode === 'up') {
                 for(let c=0; c<cols; c++) {
-                    let temp = [];
-                    for(let r=0; r<rows; r++) if(board[r][c] !== -1) temp.push(board[r][c]);
-                    while(temp.length < rows) temp.push(-1);
-                    for(let r=0; r<rows; r++) board[r][c] = temp[r];
+                    let t = []; for(let r=0; r<rows; r++) if(board[r][c]!==-1) t.push(board[r][c]);
+                    while(t.length < rows) t.push(-1);
+                    for(let r=0; r<rows; r++) board[r][c] = t[r];
                 }
             } else if(mode === 'left') {
                 for(let r=0; r<rows; r++) {
-                    let temp = board[r].filter(id => id !== -1);
-                    while(temp.length < cols) temp.push(-1);
-                    board[r] = temp;
+                    let t = board[r].filter(id => id !== -1);
+                    while(t.length < cols) t.push(-1); board[r] = t;
                 }
             } else if(mode === 'right') {
                 for(let r=0; r<rows; r++) {
-                    let temp = board[r].filter(id => id !== -1);
-                    while(temp.length < cols) temp.unshift(-1);
-                    board[r] = temp;
+                    let t = board[r].filter(id => id !== -1);
+                    while(t.length < cols) t.unshift(-1); board[r] = t;
                 }
             }
         }
 
-        function shuffleLogic() {
-            let active = [];
-            board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
-            active.sort(() => Math.random() - 0.5);
-            board.forEach((row, r) => {
-                row.forEach((id, c) => { if(board[r][c] !== -1) board[r][c] = active.pop(); });
-            });
-            shuffles--; document.getElementById('sh-count').innerText = shuffles;
-            renderBoard();
-        }
-
-        function shuffleBtn() { if(shuffles > 0) shuffleLogic(); }
-        function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
-        
-        function finishGame() {
-            if(confirm("Bạn muốn kết thúc trò chơi và lưu điểm ngay bây giờ?")) {
-                saveScore();
-                alert("Đã lưu điểm: " + score);
-                location.reload();
+        function shuffleBtn() {
+            if(shuffles > 0) {
+                let active = []; board.forEach(row => row.forEach(id => { if(id!==-1) active.push(id); }));
+                active.sort(() => Math.random() - 0.5);
+                board.forEach((row, r) => row.forEach((id, c) => { if(board[r][c]!==-1) board[r][c] = active.pop(); }));
+                shuffles--; document.getElementById('sh-count').innerText = shuffles;
+                renderBoard();
             }
         }
 
+        function finishGame() { if(confirm("Lưu điểm và thoát?")) { saveScore(); alert("Điểm của bạn: " + score); location.reload(); } }
+        function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
         function gameOver() { saveScore(); alert("HẾT GIỜ! Điểm: " + score); location.reload(); }
 
-        // --- HỆ THỐNG XẾP HẠNG GITHUB ---
         async function showLeaderboard() {
             const list = document.getElementById('score-list');
             document.getElementById('score-modal').style.display = 'flex';
             list.innerHTML = "<p style='text-align:center;'>Đang tải...</p>";
             try {
-                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=open&per_page=50`, {
+                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all&per_page=50`, {
                     headers: { 'Authorization': `token ${G_TOKEN}` }
                 });
                 const data = await res.json();
-                
-                if (data.length === 0) {
-                    list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>";
-                } else {
-                    data.sort((a, b) => {
-                        const scoreA = parseInt(a.title.replace('SCORE: ', '')) || 0;
-                        const scoreB = parseInt(b.title.replace('SCORE: ', '')) || 0;
-                        return scoreB - scoreA;
-                    });
-
+                if (!data.length) { list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>"; }
+                else {
+                    data.sort((a, b) => (parseInt(b.title.replace('SCORE: ', '')) || 0) - (parseInt(a.title.replace('SCORE: ', '')) || 0));
                     list.innerHTML = data.map((i, index) => {
-                        const rawScore = parseInt(i.title.replace('SCORE: ', '')) || 0;
-                        const formattedScore = rawScore.toLocaleString('de-DE');
-                        
-                        let cleanName = i.body || "Ẩn danh";
-                        cleanName = cleanName.replace(/Player[:\s]*/gi, '');
-                        cleanName = cleanName.split('|')[0].trim();
-
-                        return `
-                            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:16px;">
-                                <span>${index + 1}. ${cleanName}</span>
-                                <b style="color:#00f2fe;">${formattedScore} đ</b>
-                            </div>
-                        `;
+                        const s = (parseInt(i.title.replace('SCORE: ', '')) || 0).toLocaleString('de-DE');
+                        let n = (i.body || "Ẩn danh").replace(/Player[:\s]*/gi, '').split('|')[0].trim();
+                        return `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:16px;">
+                            <span>${index + 1}. ${n}</span><b style="color:#00f2fe;">${s} đ</b></div>`;
                     }).join('');
                 }
-            } catch (e) { 
-                list.innerHTML = "<p style='text-align:center; color:red;'>Lỗi tải bảng điểm!</p>"; 
-            }
+            } catch (e) { list.innerHTML = "<p style='text-align:center; color:red;'>Lỗi tải bảng điểm!</p>"; }
         }
 
         async function saveScore() {
@@ -305,10 +301,7 @@
                     headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `SCORE: ${score}`, body: `${pName}` })
                 });
-                console.log("Đã lưu điểm thành công!");
-            } catch(e) { 
-                console.error("Lỗi lưu điểm:", e); 
-            }
+            } catch(e) { console.error(e); }
         }
     </script>
 </body>

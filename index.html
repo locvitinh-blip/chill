@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pikachu Legend 2026 1</title>
+    <title>Pikachu Legend 2026 2</title>
     <style>
         :root { --tile-w: 42px; --tile-h: 54px; --cols: 4; --rows: 4; }
         @media (min-width: 768px) { :root { --tile-w: 50px; --tile-h: 65px; } }
@@ -18,8 +18,7 @@
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1; }
 
         #game-view { 
-            position: relative; z-index: 5; 
-            display: none; flex-direction: column; 
+            position: relative; z-index: 5; display: none; flex-direction: column; 
             width: 100vw; height: 100vh; 
         }
 
@@ -33,31 +32,25 @@
         .stats { display: flex; gap: 15px; font-weight: bold; font-size: 0.9rem; color: #00f2fe; }
         .btn-group { display: flex; gap: 8px; margin-top: 5px; }
         
-        /* VÙNG CUỘN SIÊU RỘNG (SUPER SCROLL) */
         .game-container {
-            flex: 1; overflow: auto;
-            display: block; /* Đổi sang block để cuộn mượt hơn */
-            padding: 100px 50px; /* Thêm đệm cực lớn để trượt thoải mái qua khung */
-            -webkit-overflow-scrolling: touch;
-            text-align: center;
+            flex: 1; overflow: auto; display: block;
+            padding: 120px 50px; /* Vùng trượt cực rộng để không bị vướng nút */
+            -webkit-overflow-scrolling: touch; text-align: center;
         }
 
         #game-board {
-            display: inline-grid; /* Để bảng nằm giữa khi cuộn */
+            display: inline-grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 3px; 
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px; border-radius: 10px;
-            border: 1px solid rgba(0,242,254,0.3);
+            gap: 3px; background: rgba(255, 255, 255, 0.05);
+            padding: 15px; border-radius: 10px; border: 1px solid rgba(0,242,254,0.3);
         }
 
         .tile { 
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; background-repeat: no-repeat;
             border-radius: 4px; border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; box-sizing: border-box;
-            transition: opacity 0.2s; /* Chỉ dùng transition mờ đi, bỏ scale để tránh dính ảnh */
+            cursor: pointer; box-sizing: border-box; transition: opacity 0.2s;
         }
         .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; z-index: 10; }
         .tile.matched { opacity: 0 !important; pointer-events: none; visibility: hidden; }
@@ -66,7 +59,6 @@
         #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
         .btn-s { padding: 8px 12px; background: #222; border: 1px solid #00f2fe; color: white; border-radius: 15px; font-size: 0.75rem; cursor: pointer; }
-        .btn-s:active { background: #00f2fe; color: black; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid #00f2fe; text-align: center; width: 80%; max-width: 300px; }
@@ -101,10 +93,7 @@
                 <button class="btn-s" onclick="location.reload()">MENU</button>
             </div>
         </div>
-
-        <div class="game-container">
-            <div id="game-board"></div>
-        </div>
+        <div class="game-container"><div id="game-board"></div></div>
     </div>
 
     <div id="score-modal" class="modal" style="display:none;">
@@ -116,8 +105,10 @@
     </div>
 
     <script>
-        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
-        const G_REPO = 'locvitinh-blip/chill';
+        // --- CHỖ NHẬP TOKEN CỦA BẠN ---
+        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
+        const G_REPO = 'locvitinh-blip/chill'; 
+        // ------------------------------
 
         const levels = [
             { c: 4, r: 5, t: 120, g: "none" },
@@ -131,7 +122,7 @@
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
         function initGame() {
-            name = document.getElementById('p-name').value || "Yến Lộc";
+            name = document.getElementById('p-name').value || "Dâu Ry";
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-view').style.display = 'flex';
             loadLevel();
@@ -146,7 +137,6 @@
             timeLeft = lv.t; updateBar();
             timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); } }, 1000);
             matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
-            isProcessing = false;
             generateBoard();
         }
 
@@ -155,19 +145,14 @@
             let pairs = [];
             for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
             pairs.sort(() => Math.random() - 0.5);
-            
             const container = document.getElementById('game-board');
-            container.innerHTML = '';
-            board = [];
-
+            container.innerHTML = ''; board = [];
             for(let r=0; r<lv.r; r++) {
                 board[r] = [];
                 for(let c=0; c<lv.c; c++) {
-                    const id = pairs.pop();
-                    board[r][c] = id;
+                    const id = pairs.pop(); board[r][c] = id;
                     const tile = document.createElement('div');
-                    tile.id = `t-${r}-${c}`;
-                    tile.className = 'tile';
+                    tile.id = `t-${r}-${c}`; tile.className = 'tile';
                     tile.style.backgroundImage = `url('${imgs[id]}')`;
                     tile.onclick = () => clickTile(r, c);
                     container.appendChild(tile);
@@ -178,15 +163,10 @@
 
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
-
             const tileEl = document.getElementById(`t-${r}-${c}`);
-            
             if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
-                tileEl.classList.remove('selected');
-                selected = [];
-                return;
+                tileEl.classList.remove('selected'); selected = []; return;
             }
-            
             tileEl.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
@@ -194,30 +174,18 @@
                 isProcessing = true;
                 const [a, b] = selected;
                 if(a.id === b.id) {
-                    // FIX DÍNH ẢNH: Ẩn phần tử ngay lập tức trước khi dạt
-                    const elA = document.getElementById(`t-${a.r}-${a.c}`);
-                    const elB = document.getElementById(`t-${b.r}-${b.c}`);
-                    elA.classList.add('matched');
-                    elB.classList.add('matched');
-
+                    document.getElementById(`t-${a.r}-${a.c}`).classList.add('matched');
+                    document.getElementById(`t-${b.r}-${b.c}`).classList.add('matched');
                     setTimeout(() => {
                         board[a.r][a.c] = board[b.r][b.c] = -1;
                         score += 100; document.getElementById('sc').innerText = score;
                         matched += 2;
                         applyGravity();
-                        
-                        if(matched === levels[curLv].c * levels[curLv].r) {
-                            nextLevel();
-                        } else {
-                            setTimeout(() => {
-                                checkDeadlock();
-                                isProcessing = false;
-                            }, 400);
-                        }
-                    }, 150);
+                        if(matched === levels[curLv].c * levels[curLv].r) nextLevel();
+                        else setTimeout(() => { checkDeadlock(); isProcessing = false; }, 500);
+                    }, 200);
                 } else {
-                    score = Math.max(0, score - 5);
-                    document.getElementById('sc').innerText = score;
+                    score = Math.max(0, score - 5); document.getElementById('sc').innerText = score;
                     setTimeout(() => {
                         document.getElementById(`t-${a.r}-${a.c}`).classList.remove('selected');
                         document.getElementById(`t-${b.r}-${b.c}`).classList.remove('selected');
@@ -256,7 +224,7 @@
                     tile.classList.remove('selected');
                     if (id === -1) {
                         tile.classList.add('matched');
-                        tile.style.backgroundImage = 'none'; // Xóa hẳn ảnh để không bị dính
+                        tile.style.backgroundImage = 'none';
                     } else {
                         tile.classList.remove('matched');
                         tile.style.backgroundImage = `url('${imgs[id]}')`;
@@ -266,21 +234,21 @@
         }
 
         function checkDeadlock() {
-            let active = [];
-            board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
-            if (active.length === 0) return;
-
+            let activeOnBoard = [];
+            board.forEach(row => row.forEach(id => { if(id !== -1) activeOnBoard.push(id); }));
+            if (activeOnBoard.length === 0) return;
             let counts = {};
-            active.forEach(id => counts[id] = (counts[id] || 0) + 1);
-            let canMove = false;
-            for(let id in counts) { if(counts[id] >= 2) { canMove = true; break; } }
+            activeOnBoard.forEach(id => counts[id] = (counts[id] || 0) + 1);
+            let hasPairs = false;
+            for(let id in counts) { if(counts[id] >= 2) { hasPairs = true; break; } }
 
-            if(!canMove) {
+            if(!hasPairs) {
                 if(shuffles > 0) {
-                    alert("Không còn nước đi, tự động trộn hình!");
+                    alert("Không còn cặp trùng! Đang tự động xáo hình...");
                     shuffleLogic(true);
                 } else {
-                    alert("THUA CUỘC!");
+                    alert("THUA CUỘC! Hết nước đi.");
+                    saveScore();
                     location.reload();
                 }
             }
@@ -299,9 +267,19 @@
         }
 
         function shuffleBtn() { if(!isProcessing && shuffles > 0) shuffleLogic(false); }
-        function nextLevel() { score += 1000; curLv < 4 ? (curLv++, loadLevel()) : (alert("BẠN LÀ HUYỀN THOẠI!"), location.reload()); }
+        function nextLevel() { score += 1000; curLv < 4 ? (curLv++, loadLevel()) : (alert("XUẤT SẮC!"), location.reload()); }
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
         function toggleMusic() { const m = document.getElementById('bg-music'); m.paused ? m.play() : m.pause(); }
+
+        async function saveScore() {
+            try {
+                await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${name}` })
+                });
+            } catch(e) {}
+        }
 
         async function showLeaderboard() {
             const list = document.getElementById('score-list');

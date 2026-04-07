@@ -3,89 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yên Lộc - Pikachu Legend 2026</title>
+    <title>Yên Lộc - Pikachu Fix Căn Giữa</title>
     <style>
-        :root { --tile-w: 48px; --tile-h: 62px; --cols: 6; --rows: 4; }
+        /* Tối ưu kích thước ô để không bị quá to */
+        :root { --tile-w: 45px; --tile-h: 58px; --cols: 6; --rows: 4; }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background: #000 url('background.jpg') no-repeat center center fixed;
-            background-size: cover; font-family: 'Segoe UI', Tahoma, sans-serif;
-            overflow: hidden; color: white; touch-action: manipulation;
+            background-size: cover; font-family: sans-serif;
+            overflow: hidden; color: white;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        /* Header gọn gàng */
+        /* Header luôn căn giữa và rộng 100% */
         .header-controls {
-            height: 70px; background: rgba(0,0,0,0.9);
+            width: 100%; height: 80px;
+            background: rgba(0,0,0,0.85);
             border-bottom: 2px solid #00f2fe;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            gap: 5px; z-index: 100; position: relative;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            gap: 8px; box-sizing: border-box;
         }
 
-        .stats-row { display: flex; gap: 15px; font-weight: bold; font-size: 0.9rem; color: #00f2fe; }
+        .stats-row { display: flex; gap: 20px; font-weight: bold; font-size: 1rem; color: #00f2fe; }
 
+        /* Vùng chứa game luôn căn giữa tuyệt đối */
         .game-container {
-            height: calc(100% - 70px); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; padding: 10px; box-sizing: border-box;
+            flex: 1; width: 100%;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 10px; box-sizing: border-box;
         }
 
+        /* Bảng game tự căn giữa */
         #game-board {
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 4px; padding: 10px; background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px; border: 1px solid rgba(0,242,254,0.4);
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            gap: 4px; padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px; border: 1px solid #00f2fe;
+            /* Tự động co giãn nếu màn hình quá hẹp */
+            max-width: 95vw;
+            justify-content: center;
         }
 
         .tile { 
             width: var(--tile-w); height: var(--tile-h); 
-            background-size: 100% 100%; border-radius: 6px;
+            background-size: 100% 100%; border-radius: 5px;
             border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; transition: transform 0.1s;
         }
-        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; transform: scale(1.05); z-index: 10; }
+        .tile.selected { border: 3px solid #fdfc47; box-shadow: 0 0 10px #fdfc47; }
         .tile.matched { opacity: 0 !important; pointer-events: none; visibility: hidden; }
 
-        .timer-bg { width: 200px; height: 8px; background: #222; border-radius: 10px; border: 1px solid #00f2fe; overflow: hidden; }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 1s linear; }
+        .timer-bg { width: 180px; height: 8px; background: #222; border-radius: 10px; border: 1px solid #00f2fe; }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
-        .btn-row { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-s { padding: 8px 15px; background: #222; border: 1px solid #00f2fe; color: white; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-s { padding: 10px 18px; background: #222; border: 1px solid #00f2fe; color: white; border-radius: 8px; font-size: 13px; font-weight: bold; }
 
-        /* MODAL (Màn hình chờ/Bảng điểm) */
+        /* MODAL */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 85%; max-width: 320px; }
-        
-        .input-name { 
-            width: 90%; padding: 12px; margin: 20px 0; border-radius: 10px; border: none; 
-            text-align: center; font-size: 1rem; font-weight: bold; background: #333; color: #fff;
-        }
-        .menu-btn { width: 100%; padding: 14px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; margin-top: 12px; cursor: pointer; font-size: 1rem; }
-        
-        #score-list { text-align: left; margin: 15px 0; font-size: 0.9rem; max-height: 200px; overflow-y: auto; color: #ddd; }
-        .score-item { padding: 5px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
+        .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #00f2fe; text-align: center; width: 80%; }
+        .input-name { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; text-align: center; font-weight: bold; }
+        .menu-btn { width: 100%; padding: 15px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; margin-top: 10px; }
+        #score-list { text-align: left; margin: 10px 0; max-height: 200px; overflow-y: auto; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
-
     <div id="start-screen" class="modal">
         <div class="modal-box">
-            <h1 style="color:#00f2fe; margin:0;">YÊN LỘC</h1>
-            <p style="font-size: 12px; color: #888;">LỘC VI TÍNH - PIKACHU 2026</p>
-            <input type="text" id="p-name" class="input-name" placeholder="NHẬP TÊN BẠN..." maxlength="10">
-            <button class="menu-btn" onclick="initGame()">BẮT ĐẦU CHƠI</button>
-            <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">BẢNG XẾP HẠNG</button>
+            <h1 style="color:#00f2fe; margin:0;">DÂU - RY</h1>
+            <input type="text" id="p-name" class="input-name" placeholder="Tên bạn..." maxlength="10">
+            <button class="menu-btn" onclick="initGame()">CHƠI NGAY</button>
+            <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">XẾP HẠNG</button>
         </div>
     </div>
 
-    <div id="game-view" style="display:none;">
+    <div id="game-view" style="display:none; width:100%; height:100%; flex-direction:column;">
         <div class="header-controls">
             <div class="stats-row">
                 <span>LV: <b id="lv">1</b></span>
-                <span>ĐIỂM: <b id="sc">0</b></span>
+                <span><b id="sc">0</b>đ</span>
                 <span>TRỘN: <b id="sh-count">3</b></span>
             </div>
             <div class="timer-bg"><div id="timer-bar"></div></div>
@@ -95,35 +96,35 @@
             <div id="game-board"></div>
             <div class="btn-row">
                 <button class="btn-s" onclick="shuffleBtn()">TRỘN HÌNH</button>
-                <button class="btn-s" onclick="location.reload()">TRANG CHỦ</button>
+                <button class="btn-s" onclick="location.reload()">MENU</button>
             </div>
         </div>
     </div>
 
     <div id="score-modal" class="modal" style="display:none;">
         <div class="modal-box">
-            <h3 style="color:#fdfc47; margin-top:0;">🏆 CAO THỦ 🏆</h3>
+            <h3 style="color:#fdfc47;">🏆 BẢNG VÀNG</h3>
             <div id="score-list"></div>
-            <button class="menu-btn" onclick="document.getElementById('score-modal').style.display='none'">QUAY LẠI</button>
+            <button class="menu-btn" onclick="document.getElementById('score-modal').style.display='none'">ĐÓNG</button>
         </div>
     </div>
 
     <script>
-        // --- CẤU HÌNH GITHUB ---
-        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
-        const G_REPO = 'locvitinh-blip/chill'; 
+        // TOKEN VÀ REPO CỦA BẠN
+        const G_TOKEN = 'ghp_' + '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W';
+        const G_REPO = 'locvitinh-blip/chill';
 
         const levels = [
-            { c: 6, r: 4, t: 120 }, // Màn 1: 6 cột, 4 hàng (vừa khít màn hình dọc)
-            { c: 6, r: 6, t: 180 }, 
-            { c: 6, r: 8, t: 240 }
+            { c: 6, r: 4, t: 150 },
+            { c: 6, r: 6, t: 200 },
+            { c: 6, r: 8, t: 300 }
         ];
 
         let curLv = 0, score = 0, playerName = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3, isProcessing = false;
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
         function initGame() {
-            playerName = document.getElementById('p-name').value || "Yên Lộc";
+            playerName = document.getElementById('p-name').value || "Dâu Ry";
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-view').style.display = 'flex';
             loadLevel();
@@ -135,13 +136,8 @@
             document.getElementById('lv').innerText = curLv + 1;
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
-            
             timeLeft = lv.t; updateBar();
-            timer = setInterval(() => { 
-                timeLeft--; updateBar(); 
-                if(timeLeft <= 0) { alert("Hết giờ rồi!"); gameOver(); } 
-            }, 1000);
-            
+            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft<=0) gameOver(); }, 1000);
             matched = 0; shuffles = 3; isProcessing = false;
             document.getElementById('sh-count').innerText = shuffles;
             generateBoard();
@@ -152,7 +148,6 @@
             let pairs = [];
             for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
             pairs.sort(() => Math.random() - 0.5);
-            
             const container = document.getElementById('game-board');
             container.innerHTML = ''; board = [];
             for(let r=0; r<lv.r; r++) {
@@ -166,37 +161,27 @@
                     container.appendChild(tile);
                 }
             }
-            setTimeout(checkDeadlock, 1000);
         }
 
         function clickTile(r, c) {
             if (isProcessing || board[r][c] === -1) return;
             const tileEl = document.getElementById(`t-${r}-${c}`);
-            
-            if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
-                tileEl.classList.remove('selected'); selected = []; return;
-            }
-
             tileEl.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
                 isProcessing = true;
                 const [a, b] = selected;
-                if(a.id === b.id) {
+                if(a.id === b.id && (a.r !== b.r || a.c !== b.c)) {
                     document.getElementById(`t-${a.r}-${a.c}`).classList.add('matched');
                     document.getElementById(`t-${b.r}-${b.c}`).classList.add('matched');
-                    setTimeout(() => {
-                        board[a.r][a.c] = -1; board[b.r][b.c] = -1;
-                        score += 100; document.getElementById('sc').innerText = score;
-                        matched += 2;
-                        if(matched === levels[curLv].c * levels[curLv].r) {
-                            if(curLv < levels.length - 1) { curLv++; loadLevel(); }
-                            else { winGame(); }
-                        } else {
-                            setTimeout(() => { checkDeadlock(); isProcessing = false; }, 300);
-                        }
-                    }, 200);
+                    board[a.r][a.c] = -1; board[b.r][b.c] = -1;
+                    score += 100; document.getElementById('sc').innerText = score;
+                    matched += 2;
+                    if(matched === levels[curLv].c * levels[curLv].r) {
+                        curLv < levels.length - 1 ? (curLv++, loadLevel()) : winGame();
+                    }
+                    isProcessing = false;
                 } else {
                     setTimeout(() => {
                         document.getElementById(`t-${a.r}-${a.c}`).classList.remove('selected');
@@ -208,27 +193,14 @@
             }
         }
 
-        function checkDeadlock() {
-            let active = [];
-            board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
-            if (active.length === 0) return;
-            let counts = {};
-            active.forEach(id => counts[id] = (counts[id] || 0) + 1);
-            let hasPairs = false;
-            for(let id in counts) { if(counts[id] >= 2) { hasPairs = true; break; } }
-            if(!hasPairs) {
-                if(shuffles > 0) { shuffleLogic(true); } else { gameOver(); }
-            }
-        }
-
-        function shuffleLogic(auto) {
+        function shuffleLogic() {
             let currentImgs = [];
             board.forEach(row => row.forEach(id => { if(id !== -1) currentImgs.push(id); }));
             currentImgs.sort(() => Math.random() - 0.5);
             board.forEach((row, r) => {
                 row.forEach((id, c) => { if(board[r][c] !== -1) board[r][c] = currentImgs.pop(); });
             });
-            if(!auto) { shuffles--; document.getElementById('sh-count').innerText = shuffles; }
+            shuffles--; document.getElementById('sh-count').innerText = shuffles;
             board.forEach((row, r) => {
                 row.forEach((id, c) => {
                     const tile = document.getElementById(`t-${r}-${c}`);
@@ -237,13 +209,11 @@
             });
         }
 
-        function shuffleBtn() { if(!isProcessing && shuffles > 0) shuffleLogic(false); }
+        function shuffleBtn() { if(shuffles > 0) shuffleLogic(); }
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
-        
-        function gameOver() { saveScore(); alert("GAME OVER! Điểm của bạn: " + score); location.reload(); }
-        function winGame() { saveScore(); alert("CHIẾN THẮNG TUYỆT ĐỐI!"); location.reload(); }
+        function gameOver() { saveScore(); alert("Hết giờ!"); location.reload(); }
+        function winGame() { saveScore(); alert("Thắng rồi!"); location.reload(); }
 
-        // LƯU ĐIỂM LÊN GITHUB
         async function saveScore() {
             try {
                 await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
@@ -251,20 +221,18 @@
                     headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${playerName}` })
                 });
-            } catch(e) { console.error("Lỗi lưu điểm"); }
+            } catch(e) {}
         }
 
-        // XEM BẢNG XẾP HẠNG
         async function showLeaderboard() {
             const list = document.getElementById('score-list');
             document.getElementById('score-modal').style.display = 'flex';
-            list.innerHTML = "Đang kết nối...";
+            list.innerHTML = "Đang tải...";
             try {
-                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all&per_page=10`);
+                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all`);
                 const data = await res.json();
-                list.innerHTML = data.map(i => `<div class="score-item"><span>${i.body}</span> <b>${i.title.replace('SCORE: ', '')}đ</b></div>`).join('');
-                if(data.length === 0) list.innerHTML = "Chưa có kỷ lục nào!";
-            } catch(e) { list.innerHTML = "Lỗi tải bảng điểm!"; }
+                list.innerHTML = data.map(i => `<div>${i.body}: ${i.title}</div>`).join('');
+            } catch(e) { list.innerHTML = "Lỗi tải!"; }
         }
     </script>
 </body>

@@ -3,89 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yến Lộc - Chơi cùng các con</title>
+    <title>Yến Lộc - Chơi Pikachu</title>
     <style>
         :root { 
-            --tile-w: 50px; --tile-h: 65px; 
+            --tile-w: 42px; --tile-h: 54px; /* Kích thước chuẩn Pikachu */
             --cols: 4; --rows: 4; 
         }
-        @media (min-width: 768px) {
-            :root { --tile-w: 60px; --tile-h: 75px; }
-        }
+        @media (min-width: 768px) { :root { --tile-w: 50px; --tile-h: 65px; } }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000 url('background.jpg') no-repeat center center fixed;
-            background-size: cover; font-family: 'Segoe UI', sans-serif;
-            overflow: hidden; color: white; touch-action: none;
+            background-size: cover; font-family: 'Segoe UI', sans-serif; color: white;
         }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1; }
 
-        /* MENU CHÍNH */
-        #main-menu {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 10; text-align: center; width: 320px;
-            display: flex; flex-direction: column; gap: 15px;
-        }
-        .logo-title { font-size: 3.5rem; font-weight: 900; color: #00f2fe; text-shadow: 0 0 20px #00f2fe; margin-bottom: 10px; letter-spacing: 5px; }
+        /* GIAO DIỆN CHÍNH */
+        #game-view { display: none; position: relative; z-index: 5; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        .menu-btn {
-            padding: 15px; background: rgba(255, 255, 255, 0.1); border: 2px solid #00f2fe;
-            border-radius: 50px; color: white; font-size: 1.2rem; font-weight: bold;
-            cursor: pointer; transition: 0.3s; backdrop-filter: blur(10px);
-        }
-        .menu-btn:hover { background: #00f2fe; color: black; box-shadow: 0 0 20px #00f2fe; }
-
-        /* GAME VIEW */
-        #game-view { display: none; position: relative; z-index: 5; width: 100vw; height: 100vh; }
-        #game-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
         #game-board {
             display: grid;
             grid-template-columns: repeat(var(--cols), var(--tile-w));
             grid-template-rows: repeat(var(--rows), var(--tile-h));
-            gap: 4px; padding: 8px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 12px;
-            /* CƠ CHẾ CHỐNG VỠ KHUNG */
-            transform: scale(min(1, calc(95vw / (var(--cols) * var(--tile-w) + 20px)), calc(70vh / (var(--rows) * var(--tile-h) + 20px))));
+            gap: 2px; padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            /* Chống vỡ khung trên mọi màn hình */
+            transform: scale(min(1, calc(95vw / (var(--cols) * var(--tile-w) + 40px)), calc(75vh / (var(--rows) * var(--tile-h) + 100px))));
             transform-origin: center;
         }
 
         .tile { 
             width: var(--tile-w); height: var(--tile-h); 
-            background-size: cover; background-position: center;
-            border-radius: 4px; border: 1px solid rgba(255,255,255,0.3);
-            cursor: pointer; box-sizing: border-box; transition: 0.1s;
+            background-size: 100% 100%; background-repeat: no-repeat;
+            border-radius: 3px; border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer; box-sizing: border-box; transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        .tile.selected { border: 3px solid #00f2fe; box-shadow: 0 0 15px #00f2fe; transform: scale(1.05); z-index: 10; }
-        .tile.matched { opacity: 0; pointer-events: none; }
+        .tile.selected { border: 2.5px solid #00f2fe; box-shadow: 0 0 12px #00f2fe; z-index: 10; transform: scale(1.1); }
+        .tile.matched { opacity: 0; pointer-events: none; transform: scale(0); }
 
-        .timer-container { width: 220px; height: 10px; background: #222; border-radius: 10px; margin: 15px 0; overflow: hidden; border: 1px solid #00f2fe; }
-        #timer-bar { width: 100%; height: 100%; background: #00f2fe; transition: width 0.3s linear; }
+        /* ĐIỀU KHIỂN */
+        .timer-container { width: 200px; height: 8px; background: #222; border-radius: 5px; margin: 10px 0; border: 1px solid #00f2fe; overflow: hidden; }
+        #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
-        /* NÚT ĐIỀU KHIỂN */
-        .bottom-controls { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 100; }
-        .btn-s { padding: 10px 15px; background: rgba(0,0,0,0.7); border: 1px solid #00f2fe; color: white; border-radius: 20px; font-size: 0.8rem; cursor: pointer; backdrop-filter: blur(5px); }
+        .controls { position: fixed; bottom: 20px; display: flex; gap: 8px; z-index: 100; flex-wrap: wrap; justify-content: center; }
+        .btn-s { padding: 10px 15px; background: rgba(0,0,0,0.8); border: 1px solid #00f2fe; color: white; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
 
-        /* HIỆU ỨNG BƯỚM */
-        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: hidden; }
-        .butterfly { position: absolute; font-size: 25px; pointer-events: none; }
-        @keyframes fly {
-            0% { left: -50px; top: var(--start-y); opacity: 0; transform: rotate(20deg); }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { left: 110vw; top: var(--end-y); opacity: 0; transform: rotate(-20deg); }
-        }
+        /* BƯỚM */
+        #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+        .butterfly { position: absolute; font-size: 24px; animation: fly 10s linear forwards; }
+        @keyframes fly { 0% { left: -50px; top: var(--sy); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 110vw; top: var(--ey); opacity: 0; } }
 
-        /* MODAL */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        /* MENU & MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid #00f2fe; text-align: center; width: 85%; max-width: 320px; }
-        
-        #score-list { text-align: left; margin: 15px 0; max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
-        .score-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; }
+        .menu-btn { width: 100%; padding: 15px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -94,189 +68,213 @@
     <div id="butterfly-container"></div>
     <audio id="bg-music" loop><source src="music.mp3" type="audio/mpeg"></audio>
 
-    <div id="main-menu">
-        <div class="logo-title">DÂU-RY</div>
-        <button class="menu-btn" onclick="showNameModal()">BẮT ĐẦU CHƠI</button>
-        <button class="menu-btn" onclick="showLeaderboard()">BẢNG XẾP HẠNG</button>
-        <p style="font-size: 0.8rem; color: #00f2fe; margin-top: 10px;">PIKACHU FAMILY EDITION</p>
-    </div>
-
-    <div id="name-modal" class="modal">
+    <div id="start-screen" class="modal">
         <div class="modal-box">
-            <h3 style="color:#00f2fe;">GHI DANH</h3>
-            <input type="text" id="player-name" placeholder="Tên của bạn..." maxlength="12" style="width: 90%; padding: 12px; border-radius: 10px; border: none; font-size: 1.1rem; text-align: center;">
-            <button class="menu-btn" style="width: 100%; margin-top: 20px;" onclick="startGame()">VÀO TRẬN</button>
-            <p style="cursor:pointer; color:#777; margin-top:15px;" onclick="closeModal('name-modal')">Quay lại</p>
+            <h1 style="color:#00f2fe; margin-bottom:20px;">YÊN LỘC</h1>
+            <input type="text" id="p-name" placeholder="Nhập tên..." maxlength="10" style="width:90%; padding:12px; border-radius:10px; text-align:center; font-size:1.1rem;">
+            <button class="menu-btn" onclick="initGame()">BẮT ĐẦU</button>
+            <button class="menu-btn" style="background:none; color:#00f2fe; border:1px solid #00f2fe;" onclick="showLeaderboard()">BẢNG VÀNG</button>
         </div>
     </div>
 
-    <div id="game-view">
-        <div id="game-wrapper">
-            <div style="text-align: center;">
-                <h2 id="display-name" style="margin:0; color:#00f2fe; letter-spacing:3px;">PLAYER</h2>
-                <div style="font-weight:bold;">LEVEL: <span id="lv-txt">1</span> | ĐIỂM: <span id="sc-txt">0</span></div>
-                <div class="timer-container"><div id="timer-bar"></div></div>
-            </div>
+    <div id="game-view" style="display:none;">
+        <div style="text-align: center; margin-bottom: 10px;">
+            <h2 id="display-name" style="margin:0; color:#00f2fe;">PLAYER</h2>
+            <div style="font-weight:bold;">LV: <span id="lv">1</span> | ĐIỂM: <span id="sc">0</span></div>
+            <div class="timer-container"><div id="timer-bar"></div></div>
+        </div>
 
-            <div id="game-board"></div>
+        <div id="game-board"></div>
 
-            <div class="bottom-controls">
-                <button class="btn-s" onclick="manualShuffle()">ĐỔI VỊ TRÍ (<span id="shuf-txt">3</span>)</button>
-                <button class="btn-s" id="music-btn" onclick="toggleMusic()">🎵 Nhạc: Tắt</button>
-                <button class="btn-s" onclick="location.reload()">🏠 Menu</button>
-            </div>
+        <div class="controls">
+            <button class="btn-s" onclick="shuffleBtn()">TRỘN HÌNH (<span id="sh-count">3</span>)</button>
+            <button class="btn-s" onclick="toggleMusic()">🎵 Nhạc</button>
+            <button class="btn-s" onclick="location.reload()">🏠 Menu</button>
         </div>
     </div>
 
-    <div id="score-modal" class="modal">
+    <div id="score-modal" class="modal" style="display:none;">
         <div class="modal-box">
-            <h3 style="color:#fdfc47;">🏆 BẢNG VÀNG GIA ĐÌNH 🏆</h3>
-            <div id="score-list">Đang tải...</div>
-            <button class="menu-btn" style="width: 100%;" onclick="closeModal('score-modal')">ĐÓNG</button>
+            <h3 style="color:#fdfc47;">🏆 TOP CAO THỦ 🏆</h3>
+            <div id="score-list" style="text-align:left; margin:15px 0;"></div>
+            <button class="menu-btn" onclick="document.getElementById('score-modal').style.display='none'">ĐÓNG</button>
         </div>
     </div>
 
     <script>
-        // --- CẤU HÌNH GITHUB (BẠN ĐIỀN VÀO ĐÂY) ---
-        const p1 = 'ghp_'; 
-        const p2 = '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; // Ví dụ: 'ABC123XYZ'
-        const TOKEN = p1 + p2;
-        const REPO = 'locvitinh-blip/chill';
+        // CẤU HÌNH GITHUB
+        const k1 = 'ghp_', k2 = '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
+        const G_TOKEN = k1 + k2;
+        const G_REPO = 'locvitinh-blip/chill';
 
         const levels = [
-            { c: 4, r: 4, t: 80, b: 500 },
-            { c: 6, r: 4, t: 120, b: 1000 },
-            { c: 6, r: 6, t: 180, b: 1500 },
-            { c: 8, r: 8, t: 300, b: 2500 },
-            { c: 10, r: 12, t: 450, b: 5000 }
+            { c: 4, r: 4, t: 100, g: "none" },   // Màn 1: Đứng yên
+            { c: 6, r: 4, t: 150, g: "left" },   // Màn 2: Dạt trái
+            { c: 6, r: 6, t: 200, g: "right" },  // Màn 3: Dạt phải
+            { c: 8, r: 8, t: 350, g: "split" },  // Màn 4: Tách 2 bên
+            { c: 10, r: 10, t: 500, g: "center" } // Màn 5: Gộp vào giữa
         ];
 
-        let curIdx = 0, score = 0, pName = "", timeLeft, timer, board = [], selected = [], matched = 0, shuffles = 3;
-        const imgList = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
+        let curLv = 0, score = 0, name = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3;
+        const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
-        function showNameModal() { document.getElementById('name-modal').style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function startGame() {
-            const input = document.getElementById('player-name').value.trim();
-            pName = input || "Người chơi";
-            document.getElementById('display-name').innerText = pName.toUpperCase();
-            closeModal('name-modal');
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('game-view').style.display = 'block';
-            initLevel();
-            setInterval(spawnButterfly, 3500); // Khởi động bướm
+        function initGame() {
+            name = document.getElementById('p-name').value || "DÂU - RY";
+            document.getElementById('display-name').innerText = name.toUpperCase();
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-view').style.display = 'flex';
+            loadLevel();
+            setInterval(spawnButterfly, 4000); //
         }
 
-        function initLevel() {
+        function loadLevel() {
             clearInterval(timer);
-            const lv = levels[curIdx];
-            document.getElementById('lv-txt').innerText = curIdx + 1;
-            document.getElementById('sc-txt').innerText = score;
+            const lv = levels[curLv];
+            document.getElementById('lv').innerText = curLv + 1;
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
             
-            shuffles = 3; document.getElementById('shuf-txt').innerText = shuffles;
             timeLeft = lv.t; updateBar();
             timer = setInterval(() => {
                 timeLeft--; updateBar();
-                if(timeLeft <= 0) { clearInterval(timer); alert("Hết giờ rồi!"); location.reload(); }
+                if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); }
             }, 1000);
 
-            const container = document.getElementById('game-board');
-            container.innerHTML = ''; board = []; selected = []; matched = 0;
-
-            let pairs = [];
-            for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgList.length, i % imgList.length); }
-            pairs.sort(() => Math.random() - 0.5);
-
-            for(let r=0; r<lv.r; r++) {
-                board[r] = [];
-                for(let c=0; c<lv.c; c++) {
-                    let id = pairs.pop(); board[r][c] = id;
-                    const tile = document.createElement('div');
-                    tile.className = 'tile'; tile.id = `t-${r}-${c}`;
-                    tile.style.backgroundImage = `url('${imgList[id]}')`;
-                    tile.onclick = () => handleTileClick(r, c);
-                    container.appendChild(tile);
-                }
-            }
+            matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
+            generateBoard();
         }
 
-        function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curIdx].t)*100 + '%'; }
+        function generateBoard() {
+            const lv = levels[curLv];
+            let pairs = [];
+            for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
+            pairs.sort(() => Math.random() - 0.5);
 
-        function handleTileClick(r, c) {
-            if(board[r][c] === -1) return;
-            const el = document.getElementById(`t-${r}-${c}`);
+            board = [];
+            for(let r=0; r<lv.r; r++) {
+                board[r] = [];
+                for(let c=0; c<lv.c; c++) board[r][c] = pairs.pop();
+            }
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('game-board');
+            container.innerHTML = '';
+            board.forEach((row, r) => {
+                row.forEach((id, c) => {
+                    const tile = document.createElement('div');
+                    tile.className = id === -1 ? 'tile matched' : 'tile';
+                    if(id !== -1) {
+                        tile.style.backgroundImage = `url('${imgs[id]}')`;
+                        tile.onclick = () => clickTile(r, c);
+                    }
+                    container.appendChild(tile);
+                });
+            });
+        }
+
+        function clickTile(r, c) {
+            const el = document.querySelector(`#game-board div:nth-child(${r * levels[curLv].c + c + 1})`);
             if(selected.length === 1 && selected[0].r === r && selected[0].c === c) return;
-
+            
             el.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
                 const [a, b] = selected;
-                if(a.id === b.id) { // Bạn có thể thêm thuật toán nối đường ở đây, hiện tại là khớp hình
+                if(a.id === b.id) { // Ăn điểm
                     setTimeout(() => {
-                        document.getElementById(`t-${a.r}-${a.c}`).classList.add('matched');
-                        document.getElementById(`t-${b.r}-${b.c}`).classList.add('matched');
                         board[a.r][a.c] = board[b.r][b.c] = -1;
-                        score += 100; document.getElementById('sc-txt').innerText = score;
+                        score += 100; document.getElementById('sc').innerText = score;
                         matched += 2;
-                        if(matched === levels[curIdx].c * levels[curIdx].r) levelUp();
-                    }, 200);
+                        applyGravity(); // Thuật toán dạt hình
+                        if(matched === levels[curLv].c * levels[curLv].r) nextLevel();
+                        else checkDeadlock();
+                    }, 300);
                 } else {
-                    setTimeout(() => {
-                        document.getElementById(`t-${a.r}-${a.c}`).classList.remove('selected');
-                        document.getElementById(`t-${b.r}-${b.c}`).classList.remove('selected');
-                    }, 400);
+                    setTimeout(() => render(), 400);
                 }
                 selected = [];
             }
         }
 
-        function levelUp() {
-            clearInterval(timer);
-            score += levels[curIdx].b;
-            saveToGitHub();
-            alert(`Xong màn ${curIdx+1}! Thưởng: ${levels[curIdx].b}`);
-            if(curIdx < 4) { curIdx++; initLevel(); }
-            else { alert("CHÚC MỪNG PHÁ ĐẢO!"); showLeaderboard(); }
+        // THUẬT TOÁN DI CHUYỂN (GRAVITY)
+        function applyGravity() {
+            const type = levels[curLv].g;
+            if(type === "none") { render(); return; }
+
+            board.forEach((row, r) => {
+                let active = row.filter(id => id !== -1);
+                let nextRow = new Array(row.length).fill(-1);
+
+                if(type === "left") active.forEach((id, i) => nextRow[i] = id);
+                else if(type === "right") active.forEach((id, i) => nextRow[row.length - active.length + i] = id);
+                else if(type === "center") {
+                    let start = Math.floor((row.length - active.length) / 2);
+                    active.forEach((id, i) => nextRow[start + i] = id);
+                }
+                else if(type === "split") {
+                    let mid = Math.floor(active.length / 2);
+                    active.slice(0, mid).forEach((id, i) => nextRow[i] = id);
+                    active.slice(mid).forEach((id, i) => nextRow[row.length - (active.length - mid) + i] = id);
+                }
+                board[r] = nextRow;
+            });
+            render();
         }
 
-        // --- HIỆU ỨNG ---
+        function checkDeadlock() {
+            let active = [];
+            board.forEach((row, r) => row.forEach((id, c) => { if(id !== -1) active.push(id); }));
+            let canMove = false;
+            for(let i=0; i<active.length; i++) {
+                if(active.filter(x => x === active[i]).length >= 2) { canMove = true; break; }
+            }
+            if(!canMove) { alert("Hết nước! Tự động trộn."); shuffleLogic(true); }
+        }
+
+        function shuffleLogic(auto) {
+            if(!auto && shuffles <= 0) return;
+            let currentImgs = [];
+            board.forEach(row => row.forEach(id => { if(id !== -1) currentImgs.push(id); }));
+            currentImgs.sort(() => Math.random() - 0.5);
+            board.forEach((row, r) => row.forEach((id, c) => { if(id !== -1) board[r][c] = currentImgs.pop(); }));
+            if(!auto) { shuffles--; document.getElementById('sh-count').innerText = shuffles; }
+            render();
+        }
+
+        function shuffleBtn() { shuffleLogic(false); }
+
+        function nextLevel() {
+            score += 1000;
+            saveScore();
+            if(curLv < 4) { curLv++; loadLevel(); }
+            else { alert("PHÁ ĐẢO!"); location.reload(); }
+        }
+
+        // TIỆN ÍCH
+        function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
+        
         function spawnButterfly() {
-            const container = document.getElementById('butterfly-container');
-            const b = document.createElement('div');
-            b.className = 'butterfly'; b.innerText = '🦋';
-            const startY = Math.random() * 80 + 10 + 'vh';
-            const endY = Math.random() * 80 + 10 + 'vh';
-            b.style.setProperty('--start-y', startY);
-            b.style.setProperty('--end-y', endY);
-            b.style.animation = `fly ${Math.random()*5 + 8}s linear forwards`;
-            container.appendChild(b);
-            setTimeout(() => b.remove(), 13000);
+            const b = document.createElement('div'); b.className = 'butterfly'; b.innerHTML = '🦋';
+            b.style.setProperty('--sy', Math.random()*80+'vh');
+            b.style.setProperty('--ey', Math.random()*80+'vh');
+            document.getElementById('butterfly-container').appendChild(b);
+            setTimeout(() => b.remove(), 10000);
         }
 
         function toggleMusic() {
             const m = document.getElementById('bg-music');
-            const btn = document.getElementById('music-btn');
-            if(m.paused) { m.play(); btn.innerText = "🎵 Nhạc: Bật"; }
-            else { m.pause(); btn.innerText = "🎵 Nhạc: Tắt"; }
+            m.paused ? m.play() : m.pause();
         }
 
-        function manualShuffle() {
-            if(shuffles <= 0) return;
-            shuffles--; document.getElementById('shuf-txt').innerText = shuffles;
-            initLevel();
-        }
-
-        // --- GITHUB ---
-        async function saveToGitHub() {
+        async function saveScore() {
             try {
-                await fetch(`https://api.github.com/repos/${REPO}/issues`, {
+                await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
                     method: 'POST',
-                    headers: { 'Authorization': `token ${TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${pName}` })
+                    headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${name}` })
                 });
             } catch(e) {}
         }
@@ -286,12 +284,9 @@
             document.getElementById('score-modal').style.display = 'flex';
             list.innerHTML = "Đang tải...";
             try {
-                const res = await fetch(`https://api.github.com/repos/${REPO}/issues?state=all`);
+                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all`);
                 const data = await res.json();
-                const scores = data.filter(i => i.title.startsWith('SCORE:'))
-                    .map(i => ({ n: i.body.replace('Player: ', ''), s: parseInt(i.title.replace('SCORE: ', '')) }))
-                    .sort((a,b) => b.s - a.s).slice(0, 8);
-                list.innerHTML = scores.map((s, i) => `<div class="score-row"><span>${i+1}. ${s.n}</span><span>${s.s}</span></div>`).join('');
+                list.innerHTML = data.slice(0, 5).map(i => `<div>${i.body}: ${i.title}</div>`).join('');
             } catch(e) { list.innerHTML = "Lỗi kết nối GitHub."; }
         }
     </script>

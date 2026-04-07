@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yến Lộc - Chơi Pikachu</title>
+    <title>Pikachu - Dâu Ry</title>
     <style>
         :root { 
-            --tile-w: 42px; --tile-h: 54px; /* Kích thước chuẩn Pikachu */
+            --tile-w: 42px; --tile-h: 54px; 
             --cols: 4; --rows: 4; 
         }
         @media (min-width: 768px) { :root { --tile-w: 50px; --tile-h: 65px; } }
@@ -15,11 +15,11 @@
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000 url('background.jpg') no-repeat center center fixed;
             background-size: cover; font-family: 'Segoe UI', sans-serif; color: white;
+            touch-action: none;
         }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1; }
 
-        /* GIAO DIỆN CHÍNH */
         #game-view { display: none; position: relative; z-index: 5; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
         #game-board {
@@ -30,8 +30,7 @@
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
-            /* Chống vỡ khung trên mọi màn hình */
-            transform: scale(min(1, calc(95vw / (var(--cols) * var(--tile-w) + 40px)), calc(75vh / (var(--rows) * var(--tile-h) + 100px))));
+            transform: scale(min(1, calc(95vw / (var(--cols) * var(--tile-w) + 40px)), calc(75vh / (var(--rows) * var(--tile-h) + 120px))));
             transform-origin: center;
         }
 
@@ -39,24 +38,21 @@
             width: var(--tile-w); height: var(--tile-h); 
             background-size: 100% 100%; background-repeat: no-repeat;
             border-radius: 3px; border: 1px solid rgba(255,255,255,0.2);
-            cursor: pointer; box-sizing: border-box; transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer; box-sizing: border-box; transition: all 0.3s ease;
         }
-        .tile.selected { border: 2.5px solid #00f2fe; box-shadow: 0 0 12px #00f2fe; z-index: 10; transform: scale(1.1); }
+        .tile.selected { border: 3px solid #00f2fe; box-shadow: 0 0 15px #00f2fe; z-index: 10; transform: scale(1.08); }
         .tile.matched { opacity: 0; pointer-events: none; transform: scale(0); }
 
-        /* ĐIỀU KHIỂN */
         .timer-container { width: 200px; height: 8px; background: #222; border-radius: 5px; margin: 10px 0; border: 1px solid #00f2fe; overflow: hidden; }
         #timer-bar { width: 100%; height: 100%; background: #00f2fe; }
 
         .controls { position: fixed; bottom: 20px; display: flex; gap: 8px; z-index: 100; flex-wrap: wrap; justify-content: center; }
         .btn-s { padding: 10px 15px; background: rgba(0,0,0,0.8); border: 1px solid #00f2fe; color: white; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
 
-        /* BƯỚM */
         #butterfly-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
         .butterfly { position: absolute; font-size: 24px; animation: fly 10s linear forwards; }
         @keyframes fly { 0% { left: -50px; top: var(--sy); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: 110vw; top: var(--ey); opacity: 0; } }
 
-        /* MENU & MODAL */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid #00f2fe; text-align: center; width: 85%; max-width: 320px; }
         .menu-btn { width: 100%; padding: 15px; background: #00f2fe; color: black; border: none; border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
@@ -77,15 +73,13 @@
         </div>
     </div>
 
-    <div id="game-view" style="display:none;">
+    <div id="game-view">
         <div style="text-align: center; margin-bottom: 10px;">
             <h2 id="display-name" style="margin:0; color:#00f2fe;">PLAYER</h2>
             <div style="font-weight:bold;">LV: <span id="lv">1</span> | ĐIỂM: <span id="sc">0</span></div>
             <div class="timer-container"><div id="timer-bar"></div></div>
         </div>
-
         <div id="game-board"></div>
-
         <div class="controls">
             <button class="btn-s" onclick="shuffleBtn()">TRỘN HÌNH (<span id="sh-count">3</span>)</button>
             <button class="btn-s" onclick="toggleMusic()">🎵 Nhạc</button>
@@ -102,29 +96,28 @@
     </div>
 
     <script>
-        // CẤU HÌNH GITHUB
         const k1 = 'ghp_', k2 = '7VuzaHkjDkYFq9OOtcSmCGDsIjcXiX2SlH7W'; 
         const G_TOKEN = k1 + k2;
         const G_REPO = 'locvitinh-blip/chill';
 
         const levels = [
-            { c: 4, r: 4, t: 100, g: "none" },   // Màn 1: Đứng yên
-            { c: 6, r: 4, t: 150, g: "left" },   // Màn 2: Dạt trái
-            { c: 6, r: 6, t: 200, g: "right" },  // Màn 3: Dạt phải
-            { c: 8, r: 8, t: 350, g: "split" },  // Màn 4: Tách 2 bên
-            { c: 10, r: 10, t: 500, g: "center" } // Màn 5: Gộp vào giữa
+            { c: 4, r: 4, t: 100, g: "none" },
+            { c: 6, r: 4, t: 150, g: "left" },
+            { c: 6, r: 6, t: 200, g: "right" },
+            { c: 8, r: 8, t: 350, g: "split" },
+            { c: 10, r: 10, t: 500, g: "center" }
         ];
 
         let curLv = 0, score = 0, name = "", timer, timeLeft, board = [], selected = [], matched = 0, shuffles = 3;
         const imgs = Array.from({length: 15}, (_, i) => `images/con${i+1}.jpg`);
 
         function initGame() {
-            name = document.getElementById('p-name').value || "DÂU - RY";
+            name = document.getElementById('p-name').value || "Dâu Ry";
             document.getElementById('display-name').innerText = name.toUpperCase();
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-view').style.display = 'flex';
             loadLevel();
-            setInterval(spawnButterfly, 4000); //
+            setInterval(spawnButterfly, 4000);
         }
 
         function loadLevel() {
@@ -133,13 +126,8 @@
             document.getElementById('lv').innerText = curLv + 1;
             document.documentElement.style.setProperty('--cols', lv.c);
             document.documentElement.style.setProperty('--rows', lv.r);
-            
             timeLeft = lv.t; updateBar();
-            timer = setInterval(() => {
-                timeLeft--; updateBar();
-                if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); }
-            }, 1000);
-
+            timer = setInterval(() => { timeLeft--; updateBar(); if(timeLeft <= 0) { alert("Hết giờ!"); location.reload(); } }, 1000);
             matched = 0; shuffles = 3; document.getElementById('sh-count').innerText = shuffles;
             generateBoard();
         }
@@ -149,7 +137,6 @@
             let pairs = [];
             for(let i=0; i<(lv.c * lv.r)/2; i++) { pairs.push(i % imgs.length, i % imgs.length); }
             pairs.sort(() => Math.random() - 0.5);
-
             board = [];
             for(let r=0; r<lv.r; r++) {
                 board[r] = [];
@@ -176,38 +163,45 @@
 
         function clickTile(r, c) {
             const el = document.querySelector(`#game-board div:nth-child(${r * levels[curLv].c + c + 1})`);
-            if(selected.length === 1 && selected[0].r === r && selected[0].c === c) return;
+            
+            if (selected.length === 1 && selected[0].r === r && selected[0].c === c) {
+                el.classList.remove('selected');
+                selected = [];
+                return;
+            }
             
             el.classList.add('selected');
             selected.push({r, c, id: board[r][c]});
 
             if(selected.length === 2) {
                 const [a, b] = selected;
-                if(a.id === b.id) { // Ăn điểm
+                if(a.id === b.id) {
                     setTimeout(() => {
                         board[a.r][a.c] = board[b.r][b.c] = -1;
                         score += 100; document.getElementById('sc').innerText = score;
                         matched += 2;
-                        applyGravity(); // Thuật toán dạt hình
+                        applyGravity();
                         if(matched === levels[curLv].c * levels[curLv].r) nextLevel();
                         else checkDeadlock();
-                    }, 300);
+                    }, 250);
                 } else {
-                    setTimeout(() => render(), 400);
+                    // TRỪ ĐIỂM KHI CHỌN SAI
+                    score = Math.max(0, score - 10); 
+                    document.getElementById('sc').innerText = score;
+                    setTimeout(() => {
+                        document.querySelectorAll('.tile.selected').forEach(e => e.classList.remove('selected'));
+                    }, 400);
                 }
                 selected = [];
             }
         }
 
-        // THUẬT TOÁN DI CHUYỂN (GRAVITY)
         function applyGravity() {
             const type = levels[curLv].g;
             if(type === "none") { render(); return; }
-
             board.forEach((row, r) => {
                 let active = row.filter(id => id !== -1);
                 let nextRow = new Array(row.length).fill(-1);
-
                 if(type === "left") active.forEach((id, i) => nextRow[i] = id);
                 else if(type === "right") active.forEach((id, i) => nextRow[row.length - active.length + i] = id);
                 else if(type === "center") {
@@ -226,12 +220,26 @@
 
         function checkDeadlock() {
             let active = [];
-            board.forEach((row, r) => row.forEach((id, c) => { if(id !== -1) active.push(id); }));
+            board.forEach(row => row.forEach(id => { if(id !== -1) active.push(id); }));
+            
             let canMove = false;
-            for(let i=0; i<active.length; i++) {
-                if(active.filter(x => x === active[i]).length >= 2) { canMove = true; break; }
+            // Kiểm tra xem còn ít nhất 1 cặp trùng nhau không
+            const counts = {};
+            active.forEach(id => counts[id] = (counts[id] || 0) + 1);
+            for(let id in counts) {
+                if(counts[id] >= 2) { canMove = true; break; }
             }
-            if(!canMove) { alert("Hết nước! Tự động trộn."); shuffleLogic(true); }
+
+            if(!canMove && matched < levels[curLv].c * levels[curLv].r) {
+                if(shuffles > 0) {
+                    alert("Hết nước đi! Tự động trộn hình.");
+                    shuffleLogic(true);
+                } else {
+                    alert("Hết lượt trộn và hết nước đi! GAME OVER.");
+                    saveScore();
+                    location.reload();
+                }
+            }
         }
 
         function shuffleLogic(auto) {
@@ -244,39 +252,30 @@
             render();
         }
 
-        function shuffleBtn() { shuffleLogic(false); }
-
-        function nextLevel() {
-            score += 1000;
-            saveScore();
-            if(curLv < 4) { curLv++; loadLevel(); }
-            else { alert("PHÁ ĐẢO!"); location.reload(); }
+        function shuffleBtn() { 
+            if(shuffles > 0) shuffleLogic(false); 
+            else alert("Đã hết lượt trộn hình!");
         }
 
-        // TIỆN ÍCH
+        function nextLevel() {
+            score += 1000; saveScore();
+            if(curLv < 4) { curLv++; loadLevel(); }
+            else { alert("XUẤT SẮC! BẠN ĐÃ PHÁ ĐẢO!"); location.reload(); }
+        }
+
         function updateBar() { document.getElementById('timer-bar').style.width = (timeLeft/levels[curLv].t)*100 + '%'; }
         
         function spawnButterfly() {
             const b = document.createElement('div'); b.className = 'butterfly'; b.innerHTML = '🦋';
-            b.style.setProperty('--sy', Math.random()*80+'vh');
-            b.style.setProperty('--ey', Math.random()*80+'vh');
+            b.style.setProperty('--sy', Math.random()*80+'vh'); b.style.setProperty('--ey', Math.random()*80+'vh');
             document.getElementById('butterfly-container').appendChild(b);
             setTimeout(() => b.remove(), 10000);
         }
 
-        function toggleMusic() {
-            const m = document.getElementById('bg-music');
-            m.paused ? m.play() : m.pause();
-        }
+        function toggleMusic() { const m = document.getElementById('bg-music'); m.paused ? m.play() : m.pause(); }
 
         async function saveScore() {
-            try {
-                await fetch(`https://api.github.com/repos/${G_REPO}/issues`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${name}` })
-                });
-            } catch(e) {}
+            try { await fetch(`https://api.github.com/repos/${G_REPO}/issues`, { method: 'POST', headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ title: `SCORE: ${score}`, body: `Player: ${name}` }) }); } catch(e) {}
         }
 
         async function showLeaderboard() {

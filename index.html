@@ -248,13 +248,43 @@
             document.getElementById('score-modal').style.display = 'flex';
             list.innerHTML = "<p style='text-align:center;'>Đang tải...</p>";
             try {
-                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all&per_page=10`, {
+                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all&per_page=50`, {
                     headers: { 'Authorization': `token ${G_TOKEN}` }
                 });
                 const data = await res.json();
-                if (data.length === 0) list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>";
-                else list.innerHTML = data.map(i => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>👤 ${i.body}</span><b>${i.title.replace('SCORE: ','')}đ</b></div>`).join('');
-            } catch (e) { list.innerHTML = "<p style='text-align:center;color:red;'>Lỗi tải bảng điểm!</p>"; }
+                
+                if (data.length === 0) {
+                    list.innerHTML = "<p style='text-align:center;'>Chưa có dữ liệu.</p>";
+                } else {
+                    // 1. Sắp xếp điểm cao xuống thấp
+                    data.sort((a, b) => {
+                        const scoreA = parseInt(a.title.replace('SCORE: ', '')) || 0;
+                        const scoreB = parseInt(b.title.replace('SCORE: ', '')) || 0;
+                        return scoreB - scoreA;
+                    });
+
+                    // 2. Hiển thị sạch sẽ: Tên + Điểm
+                    list.innerHTML = data.map((i, index) => {
+                        const rawScore = parseInt(i.title.replace('SCORE: ', '')) || 0;
+                        const formattedScore = rawScore.toLocaleString('de-DE'); // Định dạng 1.000
+                        
+                        // Xử lý tên: Bỏ chữ "Player", bỏ ngày giờ nếu có trong body
+                        let cleanName = i.body || "Ẩn danh";
+                        cleanName = cleanName.replace(/Player[:\s]*/gi, ''); // Xóa chữ Player
+                        cleanName = cleanName.split('|')[0].trim(); // Nếu có ngày giờ dạng "Lộc | 2024..." thì chỉ lấy "Lộc"
+                        cleanName = cleanName.split(' ')[0]; // Lấy từ đầu tiên (tên chính) nếu bạn muốn cực gọn
+
+                        return `
+                            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:16px;">
+                                <span>${index + 1}. ${cleanName}</span>
+                                <b style="color:#00f2fe;">${formattedScore} đ</b>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (e) { 
+                list.innerHTML = "<p style='text-align:center; color:red;'>Lỗi tải bảng điểm!</p>"; 
+            }
         }
 
         async function saveScore() {
@@ -265,7 +295,10 @@
                     headers: { 'Authorization': `token ${G_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `SCORE: ${score}`, body: `${pName}` })
                 });
-            } catch(e) { console.error("Lỗi lưu điểm"); }
+                console.log("Đã lưu điểm thành công!");
+            } catch(e) { 
+                console.error("Lỗi lưu điểm:", e); 
+            }
         }
     </script>
 </body>

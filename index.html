@@ -262,7 +262,7 @@
             document.getElementById('score-modal').style.display = 'flex';
             list.innerHTML = "<p style='text-align:center;'>Đang tải...</p>";
             try {
-                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=all&per_page=50`, {
+                const res = await fetch(`https://api.github.com/repos/${G_REPO}/issues?state=open&per_page=50`, {
                     headers: { 'Authorization': `token ${G_TOKEN}` }
                 });
                 const data = await res.json();
